@@ -4,7 +4,7 @@ import os
 # Caminho do banco de dados local na pasta raiz do SAMF
 # O banco será um arquivo chamado samf.db
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DB_PATH = os.path.join(BASE_DIR, "samf.db")
+DB_PATH = os.path.join(BASE_DIR, "samf.db")  # Unificado com database.py
 
 def get_connection():
     """Retorna uma conexão sqlite3."""

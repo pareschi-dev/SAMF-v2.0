@@ -65,3 +65,43 @@ CREATE TABLE IF NOT EXISTS logs_processamento (
     hash_arquivo    TEXT,
     criado_em       DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS auditoria_eventos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    fatura_id INTEGER,
+    arquivo TEXT,
+    tipo_evento TEXT NOT NULL,
+    status TEXT,
+    usuario TEXT NOT NULL DEFAULT 'sistema',
+    data_hora TEXT NOT NULL,
+    valor_anterior TEXT,
+    valor_novo TEXT,
+    observacao TEXT,
+    criado_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TRIGGER IF NOT EXISTS impedir_exclusao_auditoria
+BEFORE DELETE ON auditoria_eventos
+BEGIN
+    SELECT RAISE(ABORT, 'Logs de auditoria não podem ser excluídos');
+END;
+
+CREATE TABLE IF NOT EXISTS usuarios (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    usuario TEXT NOT NULL UNIQUE,
+    nome TEXT NOT NULL,
+    senha_hash TEXT NOT NULL,
+    perfil TEXT NOT NULL CHECK(perfil IN ('visualizador', 'operador', 'aprovador', 'administrador')),
+    ativo INTEGER NOT NULL DEFAULT 1,
+    criado_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS sessoes_usuario (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    token_hash TEXT NOT NULL UNIQUE,
+    criado_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expira_em TEXT NOT NULL,
+    encerrada_em TEXT
+);

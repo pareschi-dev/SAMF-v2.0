@@ -1,0 +1,19 @@
+{
+  "entrada_path": "C:\\code\\SAMF-HUB-v1.1\\Faturas_entrada",
+  "processamento_path": "C:\\code\\SAMF-HUB-v1.1\\Processamento",
+  "processadas_path": "C:\\code\\SAMF-HUB-v1.1\\Processados",
+  "compartilhadas_path": "C:\\code\\SAMF-HUB-v1.1\\Compartilhadas",
+  "exclusivas_path": "C:\\code\\SAMF-HUB-v1.1\\Exclusivas",
+  "revisao_path": "C:\\code\\SAMF-HUB-v1.1\\Revisao",
+  "duplicadas_path": "C:\\code\\SAMF-HUB-v1.1\\Duplicados",
+  "erro_path": "C:\\code\\SAMF-HUB-v1.1\\Erro",
+  "planilha_oficial_path": "C:\\code\\SAMF-HUB-v1.1\\Relatorios\\planilha_teste_rateio.xlsx",
+  "banco_path": "C:\\code\\SAMF-HUB-v1.1\\samf.db",
+  "modo_execucao": "automatico",
+  "intervalo_monitoramento_segundos": "30",
+  "tempo_estabilidade_arquivo_segundos": "2",
+  "limite_diferenca_arredondamento": "0.01",
+  "backup_path": "C:\\code\\SAMF-HUB-v1.1\\Backups",
+  "formato_exportacao": "xlsx",
+  "ambiente": "desenvolvimento"
+}

@@ -2,7 +2,8 @@ import sqlite3
 import os
 
 # CAMINHO ABSOLUTO FIXO - GARANTE QUE TODOS USEM O MESMO ARQUIVO
-DB_PATH = r"C:\Users\nerivaldo.junior\OneDrive - Ministério da Gestão e da Inovação dos Serv. Pub\SAMF\samf.db"
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DB_PATH = os.path.join(BASE_DIR, "samf.db")
 
 def get_connection():
     """Retorna uma conexão sqlite3 com timeout para evitar travamentos."""
