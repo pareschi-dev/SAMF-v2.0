@@ -9,10 +9,10 @@ from flask import jsonify, request, g
 from auditoria import garantir_tabela, registrar_evento
 
 PERFIS = {
-    'visualizador': {'consultar', 'exportar'},
-    'operador': {'consultar', 'exportar', 'processar', 'corrigir_dados'},
-    'aprovador': {'consultar', 'exportar', 'decidir_revisao'},
-    'administrador': {'consultar', 'exportar', 'processar', 'corrigir_dados', 'decidir_revisao', 'gerenciar_regras', 'gerenciar_orgaos', 'gerenciar_caminhos', 'gerenciar_usuarios', 'gerenciar_configuracoes'},
+    'visualizador': {'consultar', 'exportar', 'visualizar_cobrancas', 'consultar_historico_cobranca'},
+    'operador': {'consultar', 'exportar', 'processar', 'corrigir_dados', 'visualizar_cobrancas', 'gerar_previas_cobranca', 'consultar_historico_cobranca'},
+    'aprovador': {'consultar', 'exportar', 'decidir_revisao', 'visualizar_cobrancas', 'gerar_previas_cobranca', 'aprovar_mensagens_cobranca', 'consultar_historico_cobranca'},
+    'administrador': {'consultar', 'exportar', 'processar', 'corrigir_dados', 'decidir_revisao', 'visualizar_cobrancas', 'visualizar_telefone_destinatario', 'editar_regras_cobranca', 'cadastrar_destinatarios_cobranca', 'gerar_previas_cobranca', 'aprovar_mensagens_cobranca', 'enviar_mensagens_cobranca', 'consultar_historico_cobranca', 'alterar_integracao_cobranca', 'gerenciar_regras', 'gerenciar_orgaos', 'gerenciar_caminhos', 'gerenciar_usuarios', 'gerenciar_configuracoes'},
 }
 PERFIS_ALIASES = {'visualizador': 'visualizador', 'operador': 'operador', 'aprovador': 'aprovador', 'administrador': 'administrador', 'admin': 'administrador'}
 

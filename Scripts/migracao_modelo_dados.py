@@ -1,7 +1,5 @@
 import json
-import shutil
 import sqlite3
-from datetime import datetime
 from pathlib import Path
 
 from backup_recuperacao import criar_backup
@@ -15,10 +13,10 @@ def backup_db() -> Path:
     if not DB_PATH.exists():
         raise FileNotFoundError(f"Banco não encontrado em {DB_PATH}")
 
-    criar_backup(motivo='migracao_banco', versao='v2.0.0', raiz=ROOT_DIR, db_path=DB_PATH, destino=ROOT_DIR / 'Backups')
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    backup_path = ROOT_DIR / f"samf_backup_{timestamp}.db"
-    shutil.copy2(DB_PATH, backup_path)
+    backup_path = criar_backup(
+        motivo='migracao_banco', versao='v2.0.0', raiz=ROOT_DIR,
+        db_path=DB_PATH, destino=ROOT_DIR / 'Backups'
+    )
     print(f"Backup criado: {backup_path}")
     return backup_path
 
@@ -266,6 +264,197 @@ def ensure_tables(conn: sqlite3.Connection) -> None:
     )
 
 
+def ensure_cobrancas_tables(conn: sqlite3.Connection) -> None:
+    """Cria apenas as estruturas de cobranças, sem ler planilhas ou enviar mensagens."""
+    if table_exists(conn, 'mensagens'):
+        add_column_if_missing(conn, 'mensagens', 'justificativa', 'TEXT')
+        add_column_if_missing(conn, 'mensagens', 'alterado_por', 'TEXT')
+        add_column_if_missing(conn, 'mensagens', 'alterada_em', 'TEXT')
+        add_column_if_missing(conn, 'mensagens', 'valor_pendente_referencia', 'REAL')
+        add_column_if_missing(conn, 'mensagens', 'data_vencimento_referencia', 'TEXT')
+    if table_exists(conn, 'contas'):
+        add_column_if_missing(conn, 'contas', 'numero_fatura', 'TEXT')
+    if table_exists(conn, 'auditoria_cobranca'):
+        add_column_if_missing(conn, 'auditoria_cobranca', 'arquivo_origem', 'TEXT')
+        add_column_if_missing(conn, 'auditoria_cobranca', 'orgao', 'TEXT')
+        add_column_if_missing(conn, 'auditoria_cobranca', 'status', 'TEXT')
+        add_column_if_missing(conn, 'auditoria_cobranca', 'tipo_evento', 'TEXT')
+        add_column_if_missing(conn, 'auditoria_cobranca', 'valor_anterior', 'TEXT')
+        add_column_if_missing(conn, 'auditoria_cobranca', 'valor_novo', 'TEXT')
+    create_table_if_missing(conn, """
+        CREATE TABLE IF NOT EXISTS leituras_planilha (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            caminho_origem TEXT NOT NULL,
+            aba TEXT,
+            hash_origem TEXT NOT NULL,
+            versao_origem TEXT,
+            lida_em TEXT NOT NULL,
+            status TEXT NOT NULL CHECK(status IN ('sucesso', 'erro', 'bloqueada')),
+            erro TEXT,
+            UNIQUE(caminho_origem, hash_origem, aba)
+        )
+    """)
+    create_table_if_missing(conn, """
+        CREATE TABLE IF NOT EXISTS mapeamentos_planilha (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            versao INTEGER NOT NULL,
+            aba TEXT NOT NULL,
+            colunas_json TEXT NOT NULL,
+            observacoes TEXT,
+            usuario TEXT NOT NULL,
+            ativa INTEGER NOT NULL DEFAULT 0 CHECK(ativa IN (0, 1)),
+            criada_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(versao)
+        )
+    """)
+    create_table_if_missing(conn, """
+        CREATE TABLE IF NOT EXISTS regras_cobranca (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nome TEXT NOT NULL UNIQUE,
+            descricao TEXT,
+            ativa INTEGER NOT NULL DEFAULT 0 CHECK(ativa IN (0, 1)),
+            dias_antes_vencimento INTEGER NOT NULL DEFAULT 0 CHECK(dias_antes_vencimento >= 0),
+            dias_depois_vencimento INTEGER NOT NULL DEFAULT 0 CHECK(dias_depois_vencimento >= 0),
+            cobrar_vencidas INTEGER NOT NULL DEFAULT 0 CHECK(cobrar_vencidas IN (0, 1)),
+            cobrar_proximas INTEGER NOT NULL DEFAULT 0 CHECK(cobrar_proximas IN (0, 1)),
+            valor_minimo REAL NOT NULL DEFAULT 0 CHECK(valor_minimo >= 0),
+            servicos_json TEXT,
+            fornecedores_json TEXT,
+            orgaos_json TEXT,
+            destinatarios_json TEXT,
+            modelo_mensagem TEXT,
+            exigir_aprovacao INTEGER NOT NULL DEFAULT 1 CHECK(exigir_aprovacao IN (0, 1)),
+            limite_diario INTEGER NOT NULL DEFAULT 0 CHECK(limite_diario >= 0),
+            intervalo_minimo_segundos INTEGER NOT NULL DEFAULT 0 CHECK(intervalo_minimo_segundos >= 0),
+            horario_permitido TEXT,
+            usuario_criador TEXT NOT NULL,
+            criada_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            alterada_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    create_table_if_missing(conn, """
+        CREATE TABLE IF NOT EXISTS destinatarios (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nome TEXT NOT NULL,
+            orgao TEXT,
+            unidade TEXT,
+            telefone TEXT,
+            tipo TEXT NOT NULL,
+            ativo INTEGER NOT NULL DEFAULT 1 CHECK(ativo IN (0, 1)),
+            autorizacao_registrada INTEGER NOT NULL DEFAULT 0 CHECK(autorizacao_registrada IN (0, 1)),
+            observacao TEXT,
+            validado_em TEXT,
+            criado_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            atualizado_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    create_table_if_missing(conn, """
+        CREATE TABLE IF NOT EXISTS contas (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            identificador TEXT NOT NULL UNIQUE,
+            fatura_id INTEGER REFERENCES faturas(id) ON DELETE SET NULL,
+            arquivo_origem TEXT,
+            fornecedor TEXT,
+            servico TEXT,
+            orgao TEXT,
+            unidade TEXT,
+            numero_fatura TEXT,
+            responsavel TEXT,
+            competencia TEXT,
+            data_emissao TEXT,
+            data_vencimento TEXT,
+            valor_original REAL,
+            valor_pago REAL,
+            valor_pendente REAL,
+            valor_atraso REAL,
+            status TEXT NOT NULL CHECK(status IN ('PAGA', 'PENDENTE', 'PROXIMA_DO_VENCIMENTO', 'VENCIDA', 'SEM_DATA_DE_VENCIMENTO', 'SEM_VALOR', 'DIVERGENTE', 'AGUARDANDO_REVISAO')),
+            telefone_destinatario TEXT,
+            regra_cobranca_id INTEGER REFERENCES regras_cobranca(id) ON DELETE SET NULL,
+            origem_planilha TEXT,
+            origem_hash TEXT,
+            leitura_planilha_id INTEGER REFERENCES leituras_planilha(id) ON DELETE SET NULL,
+            atualizada_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            criada_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    create_table_if_missing(conn, """
+        CREATE TABLE IF NOT EXISTS mensagens (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            conta_id INTEGER NOT NULL REFERENCES contas(id) ON DELETE CASCADE,
+            destinatario_id INTEGER NOT NULL REFERENCES destinatarios(id),
+            regra_id INTEGER NOT NULL REFERENCES regras_cobranca(id),
+            competencia TEXT NOT NULL,
+            tipo_alerta TEXT NOT NULL,
+            canal TEXT NOT NULL CHECK(canal = 'whatsapp'),
+            texto TEXT NOT NULL,
+            status TEXT NOT NULL CHECK(status IN ('previa', 'aguardando_aprovacao', 'aprovado', 'enviado', 'entregue', 'falhou', 'cancelado', 'bloqueado_duplicidade', 'bloqueado_autorizacao', 'bloqueado_dados')),
+            provedor TEXT,
+            identificador_externo TEXT,
+            tentativa INTEGER NOT NULL DEFAULT 0 CHECK(tentativa >= 0),
+            criada_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            enviada_em TEXT,
+            resposta_provedor TEXT,
+            erro TEXT,
+            usuario_aprovou TEXT,
+            aprovada_em TEXT,
+            justificativa TEXT,
+            alterado_por TEXT,
+            alterada_em TEXT,
+            valor_pendente_referencia REAL,
+            data_vencimento_referencia TEXT,
+            UNIQUE(conta_id, destinatario_id, regra_id, competencia, tipo_alerta)
+        )
+    """)
+    create_table_if_missing(conn, """
+        CREATE TABLE IF NOT EXISTS divergencias_cobranca (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            conta_id INTEGER REFERENCES contas(id) ON DELETE CASCADE,
+            campo TEXT NOT NULL,
+            valor_planilha TEXT,
+            valor_banco TEXT,
+            descricao TEXT NOT NULL,
+            resolvida INTEGER NOT NULL DEFAULT 0 CHECK(resolvida IN (0, 1)),
+            resolvida_em TEXT,
+            criada_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    create_table_if_missing(conn, """
+        CREATE TABLE IF NOT EXISTS auditoria_cobranca (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            tabela_origem TEXT NOT NULL,
+            registro_id INTEGER,
+            acao TEXT NOT NULL,
+            usuario TEXT,
+            dados_anterior TEXT,
+            dados_novo TEXT,
+            valor_anterior TEXT,
+            valor_novo TEXT,
+            origem TEXT,
+            observacao TEXT,
+            arquivo_origem TEXT,
+            orgao TEXT,
+            status TEXT,
+            tipo_evento TEXT,
+            criada_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_mapeamentos_planilha_ativa ON mapeamentos_planilha(ativa) WHERE ativa = 1")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_contas_status ON contas(status)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_contas_vencimento ON contas(data_vencimento)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_mensagens_status ON mensagens(status)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_mensagens_conta ON mensagens(conta_id)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_auditoria_cobranca_data ON auditoria_cobranca(criada_em)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_auditoria_cobranca_usuario ON auditoria_cobranca(usuario)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_auditoria_cobranca_tipo ON auditoria_cobranca(tipo_evento)")
+    conn.execute("""
+        CREATE TRIGGER IF NOT EXISTS impedir_exclusao_auditoria_cobranca
+        BEFORE DELETE ON auditoria_cobranca
+        BEGIN
+            SELECT RAISE(ABORT, 'Auditoria de cobranças não pode ser excluída');
+        END
+    """)
+
+
 def migrate_data(conn: sqlite3.Connection) -> None:
     if table_exists(conn, "orgaos"):
         rows = conn.execute("SELECT id, nome, ordem FROM orgaos ORDER BY ordem").fetchall()
@@ -351,6 +540,7 @@ def main() -> None:
     try:
         ensure_legacy_columns(conn)
         ensure_tables(conn)
+        ensure_cobrancas_tables(conn)
         migrate_data(conn)
         create_indexes(conn)
         conn.commit()

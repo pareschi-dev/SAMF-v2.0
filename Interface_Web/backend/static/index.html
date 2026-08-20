@@ -70,6 +70,20 @@
                     <a href="/faturas/revisao" data-tab="faturas-revisao" onclick="navigateToFaturas(event, 'faturas-revisao')" class="sidebar-subitem block rounded-lg px-4 py-2.5 text-sm text-gray-500 hover:bg-gray-50 transition">Aguardando revisão</a>
                 </div>
 
+                <p class="menu-label">GESTÃO FINANCEIRA</p>
+                <button id="cobrancas-menu-toggle" data-tab="cobrancas-root" onclick="toggleCobrancasMenu()" class="sidebar-item w-full flex items-center px-6 py-3 text-sm hover:bg-gray-50 transition" aria-expanded="false" aria-controls="cobrancas-submenu">
+                    <i class="fas fa-bell w-6"></i><span class="flex-1 text-left">Cobranças e vencimentos</span><i id="cobrancas-menu-chevron" class="fas fa-chevron-down text-xs transition-transform"></i>
+                </button>
+                <div id="cobrancas-submenu" class="hidden pl-6 pr-2" aria-label="Navegação de cobranças">
+                    <a href="/cobrancas" data-tab="cobrancas-visao" onclick="navigateToCobrancas(event, 'cobrancas-visao')" class="sidebar-subitem block rounded-lg px-4 py-2.5 text-sm text-gray-500 hover:bg-gray-50 transition">Visão geral</a>
+                    <a href="/cobrancas/pendentes" data-tab="cobrancas-pendentes" onclick="navigateToCobrancas(event, 'cobrancas-pendentes')" class="sidebar-subitem block rounded-lg px-4 py-2.5 text-sm text-gray-500 hover:bg-gray-50 transition">Contas pendentes</a>
+                    <a href="/cobrancas/proximas-vencimento" data-tab="cobrancas-proximas" onclick="navigateToCobrancas(event, 'cobrancas-proximas')" class="sidebar-subitem block rounded-lg px-4 py-2.5 text-sm text-gray-500 hover:bg-gray-50 transition">Próximas do vencimento</a>
+                    <a href="/cobrancas/vencidas" data-tab="cobrancas-vencidas" onclick="navigateToCobrancas(event, 'cobrancas-vencidas')" class="sidebar-subitem block rounded-lg px-4 py-2.5 text-sm text-gray-500 hover:bg-gray-50 transition">Vencidas</a>
+                    <a href="/cobrancas/regras" data-tab="cobranca-regras" onclick="navigateToCobrancas(event, 'cobranca-regras')" class="sidebar-subitem block rounded-lg px-4 py-2.5 text-sm text-gray-500 hover:bg-gray-50 transition">Regras de cobrança</a>
+                    <a href="/cobrancas/destinatarios" data-tab="cobrancas-destinatarios" onclick="navigateToCobrancas(event, 'cobrancas-destinatarios')" class="sidebar-subitem block rounded-lg px-4 py-2.5 text-sm text-gray-500 hover:bg-gray-50 transition">Destinatários</a>
+                    <a href="/cobrancas/mensagens" data-tab="cobrancas-mensagens" onclick="navigateToCobrancas(event, 'cobrancas-mensagens')" class="sidebar-subitem block rounded-lg px-4 py-2.5 text-sm text-gray-500 hover:bg-gray-50 transition">Histórico de mensagens</a>
+                </div>
+
                 <p class="menu-label">Gestão</p>
                 <button data-tab="rateios" onclick="showTab('rateios')" class="sidebar-item w-full flex items-center px-6 py-3 text-sm hover:bg-gray-50 transition">
                     <i class="fas fa-sliders w-6"></i> Regras administrativas
@@ -214,6 +228,58 @@
                     </div>
                     <button onclick="criarUsuario()" class="mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold">Criar usuário</button>
                     <div class="overflow-x-auto mt-5"><table class="min-w-full"><thead><tr><th class="p-2 text-left">Nome</th><th class="p-2 text-left">Usuário</th><th class="p-2 text-left">Perfil</th><th class="p-2 text-left">Status</th><th class="p-2 text-left">Ação</th></tr></thead><tbody id="usuarios-admin-body"></tbody></table></div>
+                </div>
+            </div>
+
+            <!-- Tab: Logs -->
+            <div id="cobranca-regras" class="tab-content space-y-6">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <div class="flex justify-between items-center mb-5"><div><p class="text-xs font-black uppercase text-blue-600">Gestão financeira</p><h2 class="text-2xl font-bold text-gray-800">Regras de cobrança</h2></div><button onclick="salvarRegraCobranca()" class="px-4 py-2 bg-blue-600 text-white rounded-lg font-bold">Salvar regra</button></div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <input id="cob-id" type="hidden"><input id="cob-nome" class="border rounded-lg px-3 py-2" placeholder="Nome" required>
+                        <input id="cob-descricao" class="border rounded-lg px-3 py-2 md:col-span-2" placeholder="Descrição">
+                        <input id="cob-antes" type="number" min="0" class="border rounded-lg px-3 py-2" placeholder="Dias de antecedência">
+                        <input id="cob-depois" type="number" min="0" class="border rounded-lg px-3 py-2" placeholder="Dias após vencimento">
+                        <input id="cob-minimo" type="number" min="0" step="0.01" class="border rounded-lg px-3 py-2" placeholder="Valor mínimo">
+                        <input id="cob-servicos" class="border rounded-lg px-3 py-2" placeholder="Serviços (JSON ou texto)">
+                        <input id="cob-fornecedores" class="border rounded-lg px-3 py-2" placeholder="Fornecedores (JSON ou texto)">
+                        <input id="cob-orgaos" class="border rounded-lg px-3 py-2" placeholder="Órgãos (JSON ou texto)">
+                        <input id="cob-destinatarios" class="border rounded-lg px-3 py-2" placeholder="Destinatários (JSON ou texto)">
+                        <input id="cob-limite" type="number" min="0" class="border rounded-lg px-3 py-2" placeholder="Limite diário">
+                        <input id="cob-intervalo" type="number" min="0" class="border rounded-lg px-3 py-2" placeholder="Intervalo entre mensagens (s)">
+                        <input id="cob-horario" class="border rounded-lg px-3 py-2" placeholder="Horário permitido, ex.: 08:00-18:00">
+                        <textarea id="cob-modelo" class="border rounded-lg px-3 py-2 md:col-span-3" rows="3" placeholder="Modelo de mensagem"></textarea>
+                        <label class="flex gap-2 items-center text-sm"><input id="cob-vencidas" type="checkbox"> Cobrar vencidas</label>
+                        <label class="flex gap-2 items-center text-sm"><input id="cob-proximas" type="checkbox"> Cobrar próximas</label>
+                        <label class="flex gap-2 items-center text-sm"><input id="cob-aprovacao" type="checkbox" checked> Exigir aprovação</label>
+                    </div>
+                    <p id="cob-status" class="text-sm text-gray-500 mt-4"></p>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 overflow-x-auto"><table class="min-w-full"><thead><tr><th class="p-2 text-left">Nome</th><th class="p-2 text-left">Janela</th><th class="p-2 text-left">Status</th><th class="p-2 text-left">Ações</th></tr></thead><tbody id="cob-regras-body"></tbody></table></div>
+                <div id="cob-preview" class="hidden bg-amber-50 rounded-xl border border-amber-200 p-6"><h3 class="font-bold text-amber-900">Prévia antes da ativação</h3><p id="cob-preview-summary" class="text-sm text-amber-800 mt-1"></p><div id="cob-preview-list" class="text-sm mt-3 space-y-1"></div></div>
+            </div>
+
+            <div id="cobrancas-shell" class="tab-content space-y-6">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <p class="text-xs font-black uppercase text-blue-600">Gestão financeira</p>
+                    <h2 id="cobrancas-shell-title" class="text-2xl font-bold text-gray-800 mt-1">Cobranças e vencimentos</h2>
+                    <p id="cobrancas-shell-description" class="text-sm text-gray-500 mt-2"></p>
+                </div>
+                <div id="cobrancas-state-loading" class="hidden bg-white rounded-xl border border-blue-100 p-10 text-center"><i class="fas fa-spinner fa-spin text-2xl text-blue-600"></i><p class="text-sm text-gray-500 mt-3">Carregando dados...</p></div>
+                <div id="cobrancas-state-empty" class="bg-white rounded-xl border border-gray-100 p-10 text-center"><i class="fas fa-inbox text-3xl text-gray-300"></i><p class="text-sm text-gray-500 mt-3">Nenhum dado disponível nesta visão.</p></div>
+                <div id="cobrancas-state-error" class="hidden bg-red-50 rounded-xl border border-red-200 p-6"><div class="flex gap-3 text-red-700"><i class="fas fa-circle-exclamation mt-1"></i><div><h3 class="font-bold">Não foi possível carregar esta visão.</h3><p id="cobrancas-error-message" class="text-sm mt-1">O serviço de dados ainda não está disponível.</p></div></div></div>
+                <div id="cobrancas-contas-content" class="hidden space-y-4">
+                    <div class="bg-white rounded-xl border border-gray-100 p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2">
+                        <input id="contas-busca" class="border rounded-lg px-3 py-2 text-sm lg:col-span-2" placeholder="Buscar conta">
+                        <input id="contas-orgao" class="border rounded-lg px-3 py-2 text-sm" placeholder="Órgão">
+                        <input id="contas-fornecedor" class="border rounded-lg px-3 py-2 text-sm" placeholder="Fornecedor">
+                        <input id="contas-servico" class="border rounded-lg px-3 py-2 text-sm" placeholder="Serviço">
+                        <select id="contas-ordenar" class="border rounded-lg px-3 py-2 text-sm"><option value="data_vencimento">Vencimento</option><option value="orgao">Órgão</option><option value="fornecedor">Fornecedor</option><option value="valor_pendente">Valor pendente</option><option value="status">Status</option></select>
+                        <select id="contas-direcao" class="border rounded-lg px-3 py-2 text-sm"><option value="asc">Crescente</option><option value="desc">Decrescente</option></select>
+                        <button onclick="carregarContasCobranca(1)" class="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold">Filtrar</button>
+                    </div>
+                    <div class="bg-white rounded-xl border border-gray-100 overflow-x-auto"><table class="min-w-full"><thead class="bg-gray-50"><tr id="contas-head"></tr></thead><tbody id="contas-body"></tbody></table></div>
+                    <div class="flex items-center justify-between"><span id="contas-total" class="text-sm text-gray-500"></span><div class="flex gap-2"><button onclick="paginaContas(-1)" class="px-3 py-2 border rounded-lg text-sm">Anterior</button><span id="contas-pagina" class="px-3 py-2 text-sm text-gray-600"></span><button onclick="paginaContas(1)" class="px-3 py-2 border rounded-lg text-sm">Próxima</button></div></div>
                 </div>
             </div>
 
@@ -394,8 +460,19 @@
             "faturas-exclusivas": { titulo: "Despesas exclusivas", icone: "fa-building" },
             "faturas-revisao": { titulo: "Aguardando revisão", icone: "fa-triangle-exclamation" },
             rateios: { titulo: "Regras administrativas", icone: "fa-sliders" },
+            "cobranca-regras": { titulo: "Regras de cobrança", icone: "fa-bell" },
             export:  { titulo: "Exportar",         icone: "fa-file-excel" },
             logs:    { titulo: "Logs do Robô",     icone: "fa-terminal" }
+        };
+
+        const COBRANCAS_VIEWS = {
+            'cobrancas-visao': { path: '/cobrancas', titulo: 'Visão geral', descricao: 'Resumo das cobranças e vencimentos.' },
+            'cobrancas-pendentes': { path: '/cobrancas/pendentes', titulo: 'Contas pendentes', descricao: 'Contas com valores pendentes de tratamento.' },
+            'cobrancas-proximas': { path: '/cobrancas/proximas-vencimento', titulo: 'Próximas do vencimento', descricao: 'Contas dentro da janela de vencimento configurada.' },
+            'cobrancas-vencidas': { path: '/cobrancas/vencidas', titulo: 'Vencidas', descricao: 'Contas vencidas com saldo pendente.' },
+            'cobranca-regras': { path: '/cobrancas/regras', titulo: 'Regras de cobrança', descricao: 'Configuração e prévia das regras de cobrança.' },
+            'cobrancas-destinatarios': { path: '/cobrancas/destinatarios', titulo: 'Destinatários', descricao: 'Destinatários autorizados para futuras comunicações.' },
+            'cobrancas-mensagens': { path: '/cobrancas/mensagens', titulo: 'Histórico de mensagens', descricao: 'Histórico de comunicações da área de cobranças.' }
         };
 
         // ---- Saudação dinâmica no cabeçalho ----
@@ -441,6 +518,20 @@
             document.getElementById('faturas-menu-chevron').classList.toggle('rotate-180', shouldOpen);
         }
 
+        function toggleCobrancasMenu(forceOpen) {
+            const submenu = document.getElementById('cobrancas-submenu');
+            const toggle = document.getElementById('cobrancas-menu-toggle');
+            const shouldOpen = typeof forceOpen === 'boolean' ? forceOpen : submenu.classList.contains('hidden');
+            submenu.classList.toggle('hidden', !shouldOpen);
+            toggle.setAttribute('aria-expanded', String(shouldOpen));
+            document.getElementById('cobrancas-menu-chevron').classList.toggle('rotate-180', shouldOpen);
+        }
+
+        function navigateToCobrancas(event, tabId) {
+            event.preventDefault();
+            showTab(tabId);
+        }
+
         function navigateToFaturas(event, tabId) {
             event.preventDefault();
             showTab(tabId);
@@ -448,7 +539,8 @@
 
         function showTab(tabId, atualizarUrl = true) {
             const view = FATURA_VIEWS[tabId];
-            const contentId = view ? 'faturas' : tabId;
+            const cobrancaView = COBRANCAS_VIEWS[tabId];
+            const contentId = view ? 'faturas' : cobrancaView && tabId !== 'cobranca-regras' ? 'cobrancas-shell' : tabId;
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
             document.querySelectorAll('.sidebar-subitem').forEach(i => i.classList.remove('active'));
@@ -461,6 +553,13 @@
                 document.getElementById('faturas-title').innerText = view.titulo;
                 if (atualizarUrl) window.history.pushState({}, '', view.path);
             }
+            if (cobrancaView) {
+                document.getElementById('cobrancas-menu-toggle').classList.add('active');
+                toggleCobrancasMenu(true);
+                if (atualizarUrl) window.history.pushState({}, '', cobrancaView.path);
+                document.getElementById('cobrancas-shell-title').innerText = cobrancaView.titulo;
+                document.getElementById('cobrancas-shell-description').innerText = cobrancaView.descricao;
+            }
 
             const meta = TABS[tabId] || TABS[contentId];
             document.getElementById('section-title').innerText = meta.titulo;
@@ -470,7 +569,9 @@
 
             if(tabId === 'dash') loadStats();
             if(view) loadFaturas(view.params);
+            if(cobrancaView && tabId !== 'cobranca-regras') carregarContasCobranca(1, tabId);
             if(tabId === 'rateios') { loadRateios(); loadRegrasAdmin(); loadUsuariosAdmin(); }
+            if(tabId === 'cobranca-regras') loadRegrasCobranca();
             if(tabId === 'logs') loadLogs();
         }
 
@@ -654,6 +755,32 @@
             loadRegrasAdmin();
         }
 
+        const COB_FIELDS = ['nome', 'descricao', 'dias_antes_vencimento', 'dias_depois_vencimento', 'valor_minimo', 'servicos_json', 'fornecedores_json', 'orgaos_json', 'destinatarios_json', 'limite_diario', 'intervalo_minimo_segundos', 'horario_permitido', 'modelo_mensagem'];
+        function regraCobrancaPayload(confirmacao_previa = false) {
+            return { nome: document.getElementById('cob-nome').value.trim(), descricao: document.getElementById('cob-descricao').value.trim(), dias_antes_vencimento: Number(document.getElementById('cob-antes').value || 0), dias_depois_vencimento: Number(document.getElementById('cob-depois').value || 0), valor_minimo: Number(document.getElementById('cob-minimo').value || 0), servicos_json: document.getElementById('cob-servicos').value.trim(), fornecedores_json: document.getElementById('cob-fornecedores').value.trim(), orgaos_json: document.getElementById('cob-orgaos').value.trim(), destinatarios_json: document.getElementById('cob-destinatarios').value.trim(), limite_diario: Number(document.getElementById('cob-limite').value || 0), intervalo_minimo_segundos: Number(document.getElementById('cob-intervalo').value || 0), horario_permitido: document.getElementById('cob-horario').value.trim(), modelo_mensagem: document.getElementById('cob-modelo').value.trim(), cobrar_vencidas: document.getElementById('cob-vencidas').checked ? 1 : 0, cobrar_proximas: document.getElementById('cob-proximas').checked ? 1 : 0, exigir_aprovacao: document.getElementById('cob-aprovacao').checked ? 1 : 0, confirmacao_previa };
+        }
+        function preencherRegraCobranca(r) { document.getElementById('cob-id').value = r.id; document.getElementById('cob-nome').value = r.nome || ''; document.getElementById('cob-descricao').value = r.descricao || ''; document.getElementById('cob-antes').value = r.dias_antes_vencimento || 0; document.getElementById('cob-depois').value = r.dias_depois_vencimento || 0; document.getElementById('cob-minimo').value = r.valor_minimo || 0; document.getElementById('cob-servicos').value = r.servicos_json || ''; document.getElementById('cob-fornecedores').value = r.fornecedores_json || ''; document.getElementById('cob-orgaos').value = r.orgaos_json || ''; document.getElementById('cob-destinatarios').value = r.destinatarios_json || ''; document.getElementById('cob-limite').value = r.limite_diario || 0; document.getElementById('cob-intervalo').value = r.intervalo_minimo_segundos || 0; document.getElementById('cob-horario').value = r.horario_permitido || ''; document.getElementById('cob-modelo').value = r.modelo_mensagem || ''; document.getElementById('cob-vencidas').checked = !!r.cobrar_vencidas; document.getElementById('cob-proximas').checked = !!r.cobrar_proximas; document.getElementById('cob-aprovacao').checked = r.exigir_aprovacao !== 0; }
+        async function loadRegrasCobranca() { const resposta = await fetch(`${API}/regras-cobranca?ativas=false`); if (!resposta.ok) return; const regras = await resposta.json(); document.getElementById('cob-regras-body').innerHTML = regras.map(r => `<tr class="border-t"><td class="p-2">${r.nome}</td><td class="p-2">${r.dias_antes_vencimento} dias antes</td><td class="p-2">${r.ativa ? 'Ativa' : 'Inativa'}</td><td class="p-2 space-x-2"><button class="text-blue-600" onclick='preencherRegraCobranca(${JSON.stringify(r)})'>Editar</button><button class="text-amber-700" onclick="previsualizarRegraCobranca(${r.id})">Prévia</button>${r.ativa ? `<button class="text-red-600" onclick="alterarAtivacaoRegra(${r.id}, false)">Desativar</button>` : `<button class="text-green-700" onclick="ativarRegraCobranca(${r.id})">Ativar</button>`}</td></tr>`).join('') || '<tr><td colspan="4" class="p-4 text-gray-400">Nenhuma regra cadastrada.</td></tr>'; }
+        let paginaContasAtual = 1;
+        let tabContasAtual = 'cobrancas-pendentes';
+        function paginaContas(delta) { carregarContasCobranca(Math.max(1, paginaContasAtual + delta), tabContasAtual); }
+        function statusDaAba(tabId) { return tabId === 'cobrancas-proximas' ? 'PRÓXIMA_DO_VENCIMENTO' : tabId === 'cobrancas-vencidas' ? 'VENCIDA' : 'PENDENTE'; }
+        function cabecalhosContas(tabId) { const base = ['Órgão', 'Unidade', 'Serviço', 'Fornecedor', 'Competência', 'Vencimento', 'Valor pendente', 'Status']; if (tabId === 'cobrancas-proximas') base.push('Dias restantes', 'Prioridade'); if (tabId === 'cobrancas-vencidas') base.push('Dias em atraso'); return base; }
+        function escapeConta(value) { return String(value ?? '-').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char])); }
+        function diasConta(conta, vencida) { if (!conta.data_vencimento) return '-'; const hoje = new Date(); const vencimento = new Date(`${conta.data_vencimento}T00:00:00`); return Math.abs(Math.round((vencimento - hoje) / 86400000)); }
+        async function carregarContasCobranca(pagina = 1, tabId = tabContasAtual) {
+            paginaContasAtual = pagina; tabContasAtual = tabId;
+            const loading = document.getElementById('cobrancas-state-loading'); const empty = document.getElementById('cobrancas-state-empty'); const error = document.getElementById('cobrancas-state-error'); const content = document.getElementById('cobrancas-contas-content');
+            loading.classList.remove('hidden'); empty.classList.add('hidden'); error.classList.add('hidden'); content.classList.add('hidden');
+            const query = new URLSearchParams({ pagina, por_pagina: 25, ordenar: document.getElementById('contas-ordenar').value, direcao: document.getElementById('contas-direcao').value, busca: document.getElementById('contas-busca').value.trim(), orgao: document.getElementById('contas-orgao').value.trim(), fornecedor: document.getElementById('contas-fornecedor').value.trim(), servico: document.getElementById('contas-servico').value.trim(), status: statusDaAba(tabId) });
+            try { const resposta = await fetch(`${API}/cobrancas/contas?${query}`); const dados = await resposta.json(); if (!resposta.ok) throw new Error(dados.erro || 'Resposta inválida.'); const headers = cabecalhosContas(tabId); document.getElementById('contas-head').innerHTML = headers.map(h => `<th class="p-3 text-left text-xs font-black text-gray-500 uppercase whitespace-nowrap">${h}</th>`).join('') + '<th class="p-3"></th>'; document.getElementById('contas-body').innerHTML = (dados.contas || []).map(conta => { const extras = tabId === 'cobrancas-proximas' ? `<td class="p-3">${diasConta(conta, false)}</td><td class="p-3">${diasConta(conta, false) <= 1 ? 'Alta' : 'Média'}</td>` : tabId === 'cobrancas-vencidas' ? `<td class="p-3">${diasConta(conta, true)}</td>` : ''; return `<tr class="border-t hover:bg-gray-50"><td class="p-3">${escapeConta(conta.orgao)}</td><td class="p-3">${escapeConta(conta.unidade)}</td><td class="p-3">${escapeConta(conta.servico)}</td><td class="p-3">${escapeConta(conta.fornecedor)}</td><td class="p-3">${escapeConta(conta.competencia)}</td><td class="p-3">${escapeConta(conta.data_vencimento)}</td><td class="p-3">${escapeConta(conta.valor_pendente)}</td><td class="p-3">${escapeConta(conta.status)}</td>${extras}<td class="p-3"><button class="text-blue-600 font-semibold" onclick="abrirDetalheConta(${conta.id})">Detalhes</button></td></tr>`; }).join(''); loading.classList.add('hidden'); if (!dados.contas?.length) { empty.classList.remove('hidden'); return; } content.classList.remove('hidden'); document.getElementById('contas-total').innerText = `${dados.total} conta(s)`; document.getElementById('contas-pagina').innerText = `${dados.pagina} / ${Math.max(1, dados.paginas)}`; } catch (err) { loading.classList.add('hidden'); document.getElementById('cobrancas-error-message').innerText = err.message; error.classList.remove('hidden'); }
+        }
+        async function abrirDetalheConta(id) { const resposta = await fetch(`${API}/cobrancas/contas/${id}`); const conta = await resposta.json(); if (!resposta.ok) return alert(conta.erro || 'Conta não encontrada.'); document.querySelector('#modal h3').innerText = 'Detalhe da conta'; document.getElementById('modal-content').innerHTML = Object.entries(conta).map(([chave, valor]) => `<div class="flex justify-between gap-4 border-b py-2"><span class="text-gray-500">${escapeConta(chave)}</span><strong class="text-right">${escapeConta(valor)}</strong></div>`).join(''); document.getElementById('modal').classList.remove('hidden'); }
+        async function previsualizarRegraCobranca(id) { const resposta = await fetch(`${API}/regras-cobranca/${id}/preview`, { method: 'POST' }); const dados = await resposta.json(); if (!resposta.ok) return alert(dados.erro || 'Não foi possível gerar a prévia.'); document.getElementById('cob-preview').classList.remove('hidden'); document.getElementById('cob-preview-summary').innerText = `${dados.quantidade} conta(s) seriam afetadas. Nenhuma mensagem será enviada.`; document.getElementById('cob-preview-list').innerHTML = dados.contas.slice(0, 10).map(c => `<div>${c.orgao || '-'} | ${c.fornecedor || '-'} | ${c.valor_pendente ?? '-'} | ${c.status || '-'}</div>`).join('') || 'Nenhuma conta encontrada.'; document.getElementById('cob-status').innerText = 'Prévia gerada. Você pode ativar a regra mediante confirmação.'; }
+        async function ativarRegraCobranca(id) { await alterarAtivacaoRegra(id, true); }
+        async function alterarAtivacaoRegra(id, ativa) { if (ativa && !window.confirm('A prévia foi conferida? Confirmar ativação da regra?')) return; const resposta = await fetch(`${API}/regras-cobranca/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ativa, confirmacao_previa: ativa }) }); const dados = await resposta.json(); if (!resposta.ok) return alert(dados.erro || 'Operação não realizada.'); loadRegrasCobranca(); }
+        async function salvarRegraCobranca() { const id = document.getElementById('cob-id').value; const payload = regraCobrancaPayload(false); const url = id ? `${API}/regras-cobranca/${id}` : `${API}/regras-cobranca`; const resposta = await fetch(url, { method: id ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); const dados = await resposta.json(); if (!resposta.ok) return alert(dados.erro || 'Não foi possível salvar a regra.'); document.getElementById('cob-status').innerText = 'Regra salva inativa. Gere a prévia antes de ativar.'; loadRegrasCobranca(); }
+
         async function loadUsuariosAdmin() {
             const usuario = JSON.parse(localStorage.getItem('samf_usuario') || 'null');
             const painel = document.getElementById('usuarios-admin');
@@ -815,6 +942,8 @@
             if (encontrada) return encontrada[0];
             if (path === '/faturas') return 'faturas-todas';
             if (path === '/dashboard') return 'dash';
+            const cobranca = Object.entries(COBRANCAS_VIEWS).find(([, view]) => view.path === path);
+            if (cobranca) return cobranca[0];
             if (path === '/regras-rateio') return 'rateios';
             if (path === '/exportar-relatorio') return 'export';
             if (path === '/logs') return 'logs';

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 import shutil
 import sqlite3
 import tempfile
@@ -19,9 +18,19 @@ BACKUP_DIR = ROOT_DIR / 'Backups'
 VERSAO_PADRAO = 'v1.0.0'
 
 
+SENSIVEIS = ('senha', 'password', 'token', 'secret', 'credential', 'chave', 'api_key')
+
+
 def _configuracao_segura(config: dict[str, Any]) -> dict[str, Any]:
-    sensiveis = ('senha', 'password', 'token', 'secret', 'credential', 'chave', 'api_key')
-    return {chave: valor for chave, valor in config.items() if not any(item in chave.lower() for item in sensiveis)}
+    def limpar(valor: Any) -> Any:
+        if isinstance(valor, dict):
+            return {chave: limpar(item) for chave, item in valor.items()
+                    if not any(sensivel in str(chave).lower() for sensivel in SENSIVEIS)}
+        if isinstance(valor, list):
+            return [limpar(item) for item in valor]
+        return valor
+
+    return limpar(config)
 
 
 def _hash(arquivo: Path) -> str:
@@ -144,6 +153,10 @@ def restaurar_backup(arquivo: Path, destino: Path, *, permitir_destino_existente
     with tempfile.TemporaryDirectory() as temporario:
         extraido = Path(temporario)
         with zipfile.ZipFile(arquivo) as pacote:
+            for membro in pacote.infolist():
+                caminho = (extraido / membro.filename).resolve()
+                if extraido.resolve() not in caminho.parents:
+                    raise ValueError('Backup contém caminho de arquivo inválido.')
             pacote.extractall(extraido)
         manifest = json.loads((extraido / 'manifest.json').read_text(encoding='utf-8'))
         for item in manifest['arquivos']:

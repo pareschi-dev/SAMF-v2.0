@@ -1,5 +1,6 @@
 import os
 import json
+import re
 import sqlite3
 import subprocess
 import sys
@@ -20,6 +21,12 @@ from auditoria import garantir_tabela, registrar_evento
 from exportador import TIPOS, gerar_exportacao, resumo_exportacao
 from usuarios import garantir_tabelas, quantidade_usuarios, criar_usuario, autenticar, usuario_da_requisicao, exigir, PERFIS, _perfil
 from backup_recuperacao import criar_backup
+from migracao_modelo_dados import ensure_cobrancas_tables
+from gerador_previa_cobranca import ErroPreviaCobranca, gerar_previa_cobranca
+from fluxo_aprovacao_mensagens import ErroAprovacaoMensagem, validar_lote, transicionar_mensagem
+from auditoria_cobrancas import listar_auditoria
+from integracao_operacional_cobrancas import executar_integracao_planilha
+from whatsapp_business import configuracao_auditoria, validar_configuracao_whatsapp, _config_publica
 
 app = Flask(__name__, static_folder='static')
 CORS(app)
@@ -46,6 +53,55 @@ def _backup_antes(motivo):
     return arquivo
 
 
+def _mascarar_telefone(valor):
+    digitos = ''.join(char for char in str(valor or '') if char.isdigit())
+    if len(digitos) <= 4:
+        return '*' * len(digitos)
+    return '*' * (len(digitos) - 4) + digitos[-4:]
+
+
+def _normalizar_telefone(valor):
+    """Aceita 10-15 dígitos; remove apenas formatação e preserva código do país."""
+    texto = str(valor or '').strip()
+    if not texto or re.search(r'[A-Za-z]', texto):
+        raise ValueError('Telefone deve conter somente dígitos e formatação válida.')
+    if not re.fullmatch(r'\+?[0-9().\s-]+', texto):
+        raise ValueError('Telefone contém caracteres inválidos.')
+    digitos = ''.join(char for char in texto if char.isdigit())
+    if not 10 <= len(digitos) <= 15:
+        raise ValueError('Telefone deve conter entre 10 e 15 dígitos.')
+    return f'+{digitos}' if texto.startswith('+') else digitos
+
+
+def _dados_destinatario_auditoria(registro):
+    dados = dict(registro)
+    if 'telefone' in dados:
+        dados['telefone'] = _mascarar_telefone(dados['telefone'])
+    return dados
+
+
+def _auditar_destinatario(conn, acao, registro_id, anterior, novo, usuario, resultado='sucesso'):
+    conn.execute('''INSERT INTO auditoria_cobranca
+        (tabela_origem, registro_id, acao, usuario, dados_anterior, dados_novo,
+         valor_anterior, valor_novo, origem, observacao, status, tipo_evento)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+        ('destinatario', registro_id, acao, usuario,
+         json.dumps(_dados_destinatario_auditoria(anterior), ensure_ascii=False, default=str) if anterior else None,
+         json.dumps(_dados_destinatario_auditoria(novo), ensure_ascii=False, default=str) if novo else None,
+         json.dumps(_dados_destinatario_auditoria(anterior), ensure_ascii=False, default=str) if anterior else None,
+         json.dumps(_dados_destinatario_auditoria(novo), ensure_ascii=False, default=str) if novo else None,
+         'api', None, resultado, 'destinatario'))
+
+
+def _proteger_telefone(registro):
+    resultado = dict(registro)
+    if 'telefone' in resultado and 'visualizar_telefone_destinatario' not in PERFIS[g.usuario['perfil']]:
+        resultado['telefone'] = _mascarar_telefone(resultado['telefone'])
+    if 'telefone_destinatario' in resultado and 'visualizar_telefone_destinatario' not in PERFIS[g.usuario['perfil']]:
+        resultado['telefone_destinatario'] = _mascarar_telefone(resultado['telefone_destinatario'])
+    return resultado
+
+
 @app.before_request
 def autenticar_requisicao():
     if not request.path.startswith('/api/') or request.path.startswith('/api/auth/'):
@@ -58,10 +114,14 @@ def autenticar_requisicao():
         permissao = 'exportar'
     elif request.path == '/api/upload':
         permissao = 'processar'
+    elif request.path.startswith('/api/integracao-whatsapp'):
+        permissao = 'alterar_integracao_cobranca'
     elif request.path == '/api/config':
         permissao = 'gerenciar_configuracoes'
     elif request.path.startswith('/api/regras-administrativas'):
         permissao = 'gerenciar_regras' if request.method != 'GET' else 'consultar'
+    elif request.path.startswith('/api/regras-cobranca'):
+        permissao = 'editar_regras_cobranca' if request.method != 'GET' else 'visualizar_cobrancas'
     elif request.path.startswith('/api/orgaos'):
         permissao = 'gerenciar_orgaos' if request.method != 'GET' else 'consultar'
     elif request.path.startswith('/api/usuarios'):
@@ -70,6 +130,20 @@ def autenticar_requisicao():
         permissao = 'corrigir_dados'
     elif request.path.startswith('/api/faturas/') and request.path.endswith('/revisao'):
         permissao = 'decidir_revisao'
+    elif request.path.startswith('/api/cobrancas/mensagens/') and 'aprovacao' in request.path:
+        permissao = 'aprovar_mensagens_cobranca'
+    elif request.path.startswith('/api/cobrancas/mensagens/') and 'enviar' in request.path:
+        permissao = 'enviar_mensagens_cobranca'
+    elif request.path.startswith('/api/destinatarios'):
+        permissao = 'cadastrar_destinatarios_cobranca' if request.method != 'GET' else 'visualizar_cobrancas'
+    elif request.path.startswith('/api/cobrancas/contas/') and request.path.endswith('/previa'):
+        permissao = 'gerar_previas_cobranca'
+    elif request.path.startswith('/api/cobrancas/contas'):
+        permissao = 'visualizar_cobrancas'
+    elif request.path.startswith('/api/cobrancas/planilha'):
+        permissao = 'visualizar_cobrancas'
+    elif request.path.startswith('/api/cobrancas/mensagens/historico') or request.path.startswith('/api/cobrancas/auditoria'):
+        permissao = 'consultar_historico_cobranca'
     if not g.usuario:
         registrar_evento(conn, 'autorização negada', usuario='anônimo', status='negado', observacao=f'{request.method} {request.path} requer autenticação')
         conn.commit()
@@ -293,6 +367,13 @@ def corrigir_dados_extraidos(id):
 @app.route('/regras-rateio')
 @app.route('/exportar-relatorio')
 @app.route('/logs')
+@app.route('/cobrancas')
+@app.route('/cobrancas/pendentes')
+@app.route('/cobrancas/proximas-vencimento')
+@app.route('/cobrancas/vencidas')
+@app.route('/cobrancas/regras')
+@app.route('/cobrancas/destinatarios')
+@app.route('/cobrancas/mensagens')
 def routes_frontend():
     return send_from_directory('static', 'index.html')
 
@@ -318,6 +399,30 @@ def save_config():
     conn.commit(); conn.close()
     ok, mensagem = validar_configuracao(salvo)
     return jsonify({'status': 'ok' if ok else 'pendente', 'config': salvo, 'mensagem': mensagem})
+
+
+@app.route('/api/integracao-whatsapp/configuracao', methods=['GET', 'POST'])
+def configuracao_whatsapp_api():
+    if request.method == 'GET':
+        config = load_config()
+        return jsonify(validar_configuracao_whatsapp(config))
+    payload = request.get_json(silent=True) or {}
+    if any(chave in payload for chave in ('cobrancas_whatsapp_access_token', 'cobrancas_whatsapp_webhook_verify_token')):
+        return jsonify({'erro': 'Segredos devem ser fornecidos por variáveis de ambiente; somente o nome da variável é aceito.'}), 400
+    atual = load_config()
+    candidato = {**atual, **payload}
+    validacao = validar_configuracao_whatsapp(candidato)
+    if validacao['status'] == 'producao_bloqueada':
+        return jsonify(validacao), 409
+    try:
+        _backup_antes('configuracao_whatsapp')
+        salvo = salvar_configuracao(candidato, BASE_PATH)
+        conn = get_db()
+        registrar_evento(conn, 'configuração_whatsapp', usuario=g.usuario['usuario'], status=validacao['status'], valor_novo=configuracao_auditoria(salvo), observacao='Configuração segura do adaptador oficial')
+        conn.commit(); conn.close()
+        return jsonify(validar_configuracao_whatsapp(salvo))
+    except (OSError, sqlite3.Error, ValueError) as exc:
+        return jsonify({'erro': f'Configuração não alterada: {exc}'}), 503
 
 
 def _classificacao_sql():
@@ -472,6 +577,229 @@ def _regra_payload(payload):
     return {campo: payload.get(campo) for campo in campos}
 
 
+COBRANCA_RULE_FIELDS = (
+    'nome', 'descricao', 'dias_antes_vencimento', 'dias_depois_vencimento', 'cobrar_vencidas',
+    'cobrar_proximas', 'valor_minimo', 'servicos_json', 'fornecedores_json', 'orgaos_json',
+    'destinatarios_json', 'modelo_mensagem', 'exigir_aprovacao', 'limite_diario',
+    'intervalo_minimo_segundos', 'horario_permitido',
+)
+
+
+def _garantir_cobranca_api(conn):
+    tabelas = {'contas', 'regras_cobranca', 'destinatarios', 'mapeamentos_planilha'}
+    existentes = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()}
+    if not tabelas <= existentes:
+        _backup_antes('migracao_banco')
+    ensure_cobrancas_tables(conn)
+    conn.commit()
+
+
+def _cobranca_rule_payload(payload):
+    dados = {campo: payload.get(campo) for campo in COBRANCA_RULE_FIELDS if campo in payload}
+    for campo in ('servicos_json', 'fornecedores_json', 'orgaos_json', 'destinatarios_json'):
+        if campo in dados and isinstance(dados[campo], (list, dict)):
+            dados[campo] = json.dumps(dados[campo], ensure_ascii=False)
+    return dados
+
+
+def _registrar_auditoria_cobranca(conn, acao, registro_id, anterior, novo, usuario, observacao=''):
+    conn.execute('''INSERT INTO auditoria_cobranca
+        (tabela_origem, registro_id, acao, usuario, dados_anterior, dados_novo, origem, observacao)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+        ('regras_cobranca', registro_id, acao, usuario, json.dumps(anterior, ensure_ascii=False, default=str),
+         json.dumps(novo, ensure_ascii=False, default=str), 'api', observacao))
+
+
+@app.route('/api/regras-cobranca', methods=['GET', 'POST'])
+def regras_cobranca_api():
+    conn = get_db()
+    _garantir_cobranca_api(conn)
+    if request.method == 'GET':
+        ativas = request.args.get('ativas')
+        query = 'SELECT * FROM regras_cobranca'
+        valores = []
+        if ativas in {'true', 'false'}:
+            query += ' WHERE ativa=?'; valores.append(1 if ativas == 'true' else 0)
+        rows = conn.execute(query + ' ORDER BY nome', valores).fetchall()
+        conn.close()
+        return jsonify([dict(row) for row in rows])
+
+    payload = request.get_json(silent=True) or {}
+    dados = _cobranca_rule_payload(payload)
+    if not str(dados.get('nome') or '').strip():
+        conn.close(); return jsonify({'erro': 'Nome da regra é obrigatório.'}), 400
+    ativa = bool(payload.get('ativa', False))
+    if ativa and not payload.get('confirmacao_previa'):
+        conn.close(); return jsonify({'erro': 'Prévia obrigatória antes de ativar a regra.', 'preview_obrigatoria': True}), 409
+    usuario = g.usuario['usuario']
+    dados['ativa'] = 1 if ativa else 0
+    dados['usuario_criador'] = usuario
+    try:
+        _backup_antes('alteracao_regra_cobranca')
+        cur = conn.execute('''INSERT INTO regras_cobranca
+            (nome, descricao, dias_antes_vencimento, dias_depois_vencimento, cobrar_vencidas, cobrar_proximas,
+             valor_minimo, servicos_json, fornecedores_json, orgaos_json, destinatarios_json, modelo_mensagem,
+             exigir_aprovacao, limite_diario, intervalo_minimo_segundos, horario_permitido, ativa, usuario_criador)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+            tuple(dados.get(campo) for campo in ('nome', 'descricao', 'dias_antes_vencimento', 'dias_depois_vencimento', 'cobrar_vencidas', 'cobrar_proximas', 'valor_minimo', 'servicos_json', 'fornecedores_json', 'orgaos_json', 'destinatarios_json', 'modelo_mensagem', 'exigir_aprovacao', 'limite_diario', 'intervalo_minimo_segundos', 'horario_permitido')) + (dados['ativa'], usuario))
+        registro_id = cur.lastrowid
+        _registrar_auditoria_cobranca(conn, 'criação', registro_id, {}, dados, usuario)
+        conn.commit()
+        return jsonify({'status': 'criada', 'id': registro_id}), 201
+    except (OSError, sqlite3.Error, ValueError) as exc:
+        conn.rollback(); return jsonify({'erro': str(exc)}), 409
+    finally:
+        conn.close()
+
+
+@app.route('/api/regras-cobranca/<int:id>', methods=['GET', 'PUT', 'DELETE'])
+def regra_cobranca_api(id):
+    conn = get_db(); _garantir_cobranca_api(conn)
+    atual = conn.execute('SELECT * FROM regras_cobranca WHERE id=?', (id,)).fetchone()
+    if not atual:
+        conn.close(); return jsonify({'erro': 'Regra de cobrança não encontrada.'}), 404
+    anterior = dict(atual)
+    if request.method == 'GET':
+        conn.close(); return jsonify(anterior)
+    usuario = g.usuario['usuario']
+    if request.method == 'DELETE':
+        try:
+            _backup_antes('alteracao_regra_cobranca')
+        except (OSError, sqlite3.Error, ValueError) as exc:
+            conn.close(); return jsonify({'erro': f'Backup obrigatório não criado: {exc}'}), 503
+        conn.execute('UPDATE regras_cobranca SET ativa=0, alterada_em=CURRENT_TIMESTAMP WHERE id=?', (id,))
+        _registrar_auditoria_cobranca(conn, 'desativação', id, anterior, {'ativa': 0}, usuario)
+    else:
+        payload = request.get_json(silent=True) or {}
+        dados = _cobranca_rule_payload(payload)
+        if 'ativa' in payload:
+            dados['ativa'] = 1 if payload['ativa'] else 0
+        if dados.get('ativa') == 1 and not payload.get('confirmacao_previa') and not anterior['ativa']:
+            conn.close(); return jsonify({'erro': 'Prévia obrigatória antes de ativar a regra.', 'preview_obrigatoria': True}), 409
+        if not dados:
+            conn.close(); return jsonify({'erro': 'Nenhum campo para alterar.'}), 400
+        try:
+            _backup_antes('alteracao_regra_cobranca')
+        except (OSError, sqlite3.Error, ValueError) as exc:
+            conn.close(); return jsonify({'erro': f'Backup obrigatório não criado: {exc}'}), 503
+        assignments = ', '.join(f'{campo}=?' for campo in dados)
+        conn.execute(f'UPDATE regras_cobranca SET {assignments}, alterada_em=CURRENT_TIMESTAMP WHERE id=?', (*dados.values(), id))
+        _registrar_auditoria_cobranca(conn, 'alteração', id, anterior, dados, usuario)
+    conn.commit(); conn.close()
+    return jsonify({'status': 'atualizada', 'id': id})
+
+
+@app.route('/api/regras-cobranca/<int:id>/preview', methods=['POST'])
+def preview_regra_cobranca(id):
+    conn = get_db(); _garantir_cobranca_api(conn)
+    regra = conn.execute('SELECT * FROM regras_cobranca WHERE id=?', (id,)).fetchone()
+    if not regra:
+        conn.close(); return jsonify({'erro': 'Regra de cobrança não encontrada.'}), 404
+    where = ['COALESCE(valor_pendente, 0) > 0']
+    valores = []
+    if regra['valor_minimo'] is not None:
+        where.append('COALESCE(valor_pendente, 0) >= ?'); valores.append(regra['valor_minimo'])
+    rows = conn.execute('SELECT id, identificador, orgao, unidade, fornecedor, servico, competencia, data_vencimento, valor_pendente, status FROM contas WHERE ' + ' AND '.join(where) + ' ORDER BY data_vencimento, id LIMIT 500', valores).fetchall()
+    resultado = {'regra_id': id, 'quantidade': len(rows), 'contas': [dict(row) for row in rows], 'somente_previa': True}
+    conn.close()
+    return jsonify(resultado)
+
+
+@app.route('/api/destinatarios', methods=['GET', 'POST'])
+def destinatarios_api():
+    conn = get_db(); _garantir_cobranca_api(conn)
+    if request.method == 'GET':
+        rows = conn.execute('SELECT * FROM destinatarios ORDER BY nome').fetchall()
+        conn.close()
+        return jsonify([_proteger_telefone(row) for row in rows])
+    payload = request.get_json(silent=True) or {}
+    nome = str(payload.get('nome') or '').strip()
+    tipo = str(payload.get('tipo') or '').strip()
+    if not nome or not tipo:
+        conn.close(); return jsonify({'erro': 'Nome e tipo são obrigatórios.'}), 400
+    try:
+        telefone = _normalizar_telefone(payload.get('telefone'))
+    except ValueError as exc:
+        conn.close(); return jsonify({'erro': str(exc)}), 400
+    try:
+        _backup_antes('alteracao_destinatario')
+        cur = conn.execute('''INSERT INTO destinatarios
+            (nome, orgao, unidade, telefone, tipo, ativo, autorizacao_registrada, observacao)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+            (nome, payload.get('orgao'), payload.get('unidade'), telefone, tipo,
+             1 if payload.get('ativo', True) else 0, 1 if payload.get('autorizacao_registrada') else 0,
+             payload.get('observacao')))
+        _auditar_destinatario(conn, 'criação', cur.lastrowid, None, {
+            'id': cur.lastrowid, 'nome': nome, 'orgao': payload.get('orgao'),
+            'unidade': payload.get('unidade'), 'telefone': telefone, 'tipo': tipo,
+            'ativo': 1 if payload.get('ativo', True) else 0,
+            'autorizacao_registrada': 1 if payload.get('autorizacao_registrada') else 0,
+            'observacao': payload.get('observacao'),
+        }, g.usuario['usuario'])
+        conn.commit()
+        return jsonify({'id': cur.lastrowid}), 201
+    except (OSError, sqlite3.Error, ValueError) as exc:
+        conn.rollback(); return jsonify({'erro': f'Não foi possível cadastrar destinatário: {exc}'}), 409
+    finally:
+        conn.close()
+
+
+@app.route('/api/destinatarios/<int:id>', methods=['PUT'])
+def atualizar_destinatario(id):
+    payload = request.get_json(silent=True) or {}
+    conn = get_db(); _garantir_cobranca_api(conn)
+    atual = conn.execute('SELECT * FROM destinatarios WHERE id=?', (id,)).fetchone()
+    if not atual:
+        conn.close(); return jsonify({'erro': 'Destinatário não encontrado.'}), 404
+    campos = {campo: payload[campo] for campo in ('nome', 'orgao', 'unidade', 'telefone', 'tipo', 'ativo', 'autorizacao_registrada', 'observacao') if campo in payload}
+    if not campos:
+        conn.close(); return jsonify({'erro': 'Nenhuma alteração informada.'}), 400
+    try:
+        if 'telefone' in campos:
+            campos['telefone'] = _normalizar_telefone(campos['telefone'])
+    except ValueError as exc:
+        conn.close(); return jsonify({'erro': str(exc)}), 400
+    try:
+        _backup_antes('alteracao_destinatario')
+        assignments = ', '.join(f'{campo}=?' for campo in campos)
+        conn.execute(f'UPDATE destinatarios SET {assignments}, atualizado_em=CURRENT_TIMESTAMP WHERE id=?', (*campos.values(), id))
+        novo = dict(atual); novo.update(campos)
+        acao = 'desativação' if 'ativo' in campos and not campos['ativo'] else 'alteração'
+        _auditar_destinatario(conn, acao, id, dict(atual), novo, g.usuario['usuario'])
+        conn.commit()
+        return jsonify({'status': 'atualizado'})
+    except (OSError, sqlite3.Error, ValueError) as exc:
+        conn.rollback(); return jsonify({'erro': f'Não foi possível alterar destinatário: {exc}'}), 409
+    finally:
+        conn.close()
+
+
+@app.route('/api/mapeamentos-planilha', methods=['GET', 'POST'])
+def mapeamentos_planilha_api():
+    conn = get_db(); _garantir_cobranca_api(conn)
+    if request.method == 'GET':
+        rows = conn.execute('SELECT * FROM mapeamentos_planilha ORDER BY versao DESC').fetchall()
+        conn.close(); return jsonify([dict(row) for row in rows])
+    payload = request.get_json(silent=True) or {}
+    versao = payload.get('versao')
+    aba = str(payload.get('aba') or '').strip()
+    colunas = payload.get('colunas_json', payload.get('colunas'))
+    if versao is None or not aba or colunas is None:
+        conn.close(); return jsonify({'erro': 'Versão, aba e colunas são obrigatórios.'}), 400
+    try:
+        _backup_antes('alteracao_mapeamento')
+        cur = conn.execute('''INSERT INTO mapeamentos_planilha
+            (versao, aba, colunas_json, observacoes, usuario, ativa)
+            VALUES (?, ?, ?, ?, ?, ?)''',
+            (int(versao), aba, json.dumps(colunas, ensure_ascii=False) if not isinstance(colunas, str) else colunas,
+             payload.get('observacoes'), g.usuario['usuario'], 1 if payload.get('ativa') else 0))
+        conn.commit(); return jsonify({'id': cur.lastrowid}), 201
+    except (OSError, sqlite3.Error, ValueError) as exc:
+        conn.rollback(); return jsonify({'erro': f'Não foi possível cadastrar mapeamento: {exc}'}), 409
+    finally:
+        conn.close()
+
+
 @app.route('/api/regras-administrativas', methods=['GET'])
 def listar_regras_administrativas():
     conn = get_db()
@@ -597,6 +925,185 @@ def get_fatura_detalhes(id):
     rows = conn.execute('SELECT r.*, o.nome AS orgao_nome FROM rateios_calculados r JOIN orgaos o ON r.orgao_id=o.id WHERE r.fatura_id=? ORDER BY o.ordem', (id,)).fetchall()
     conn.close()
     return jsonify([dict(row) for row in rows])
+
+
+def _tabela_existe(conn, nome):
+    return conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (nome,)).fetchone() is not None
+
+
+@app.route('/api/cobrancas/contas')
+def listar_contas_cobranca():
+    conn = get_db()
+    if not _tabela_existe(conn, 'contas'):
+        conn.close()
+        return jsonify({'contas': [], 'total': 0, 'pagina': 1, 'por_pagina': 25, 'paginas': 0, 'estrutura_disponivel': False})
+    params = request.args
+    where, valores = [], []
+    busca = str(params.get('busca', '')).strip()
+    if busca:
+        where.append("(orgao LIKE ? OR unidade LIKE ? OR servico LIKE ? OR fornecedor LIKE ? OR competencia LIKE ? OR identificador LIKE ?)")
+        valores.extend([f'%{busca}%'] * 6)
+    for campo in ('status', 'orgao', 'unidade', 'servico', 'fornecedor'):
+        if params.get(campo):
+            if campo == 'status' and params[campo] == 'PRÓXIMA_DO_VENCIMENTO':
+                where.append("status IN (?, ?)"); valores.extend(['PRÓXIMA_DO_VENCIMENTO', 'PROXIMA_DO_VENCIMENTO'])
+            elif campo == 'status' and params[campo] == 'AGUARDANDO_REVISÃO':
+                where.append("status IN (?, ?)"); valores.extend(['AGUARDANDO_REVISÃO', 'AGUARDANDO_REVISAO'])
+            else:
+                where.append(f'{campo} = ?'); valores.append(params[campo])
+    filtro = (' WHERE ' + ' AND '.join(where)) if where else ''
+    ordenaveis = {'orgao', 'unidade', 'servico', 'fornecedor', 'competencia', 'data_vencimento', 'valor_pendente', 'status'}
+    ordenar = params.get('ordenar', 'data_vencimento') if params.get('ordenar') in ordenaveis else 'data_vencimento'
+    direcao = 'DESC' if str(params.get('direcao', '')).lower() == 'desc' else 'ASC'
+    try:
+        pagina = max(1, int(params.get('pagina', 1)))
+        por_pagina = min(100, max(1, int(params.get('por_pagina', 25))))
+    except ValueError:
+        conn.close(); return jsonify({'erro': 'Paginação inválida.'}), 400
+    total = conn.execute('SELECT COUNT(*) FROM contas' + filtro, valores).fetchone()[0]
+    rows = conn.execute(f'SELECT * FROM contas{filtro} ORDER BY {ordenar} {direcao}, id ASC LIMIT ? OFFSET ?', (*valores, por_pagina, (pagina - 1) * por_pagina)).fetchall()
+    conn.close()
+    return jsonify({'contas': [_proteger_telefone(row) for row in rows], 'total': total, 'pagina': pagina, 'por_pagina': por_pagina, 'paginas': (total + por_pagina - 1) // por_pagina, 'estrutura_disponivel': True})
+
+
+@app.route('/api/cobrancas/planilha/ler', methods=['POST'])
+def ler_planilha_cobrancas_api():
+    try:
+        resultado = executar_integracao_planilha(
+            get_db(), load_config(), raiz=Path(BASE_PATH),
+            usuario=g.usuario['usuario'], data_atual=datetime.now().date(),
+        )
+        status_http = 200 if resultado.get('status') == 'sucesso' else 422
+        return jsonify(resultado), status_http
+    except (OSError, sqlite3.Error, ValueError) as exc:
+        return jsonify({'status': 'AGUARDANDO_REVISÃO', 'erro': str(exc)}), 422
+
+
+@app.route('/api/cobrancas/contas/<int:id>')
+def detalhe_conta_cobranca(id):
+    conn = get_db()
+    if not _tabela_existe(conn, 'contas'):
+        conn.close(); return jsonify({'erro': 'Estrutura de contas ainda não disponível.'}), 404
+    row = conn.execute('SELECT * FROM contas WHERE id=?', (id,)).fetchone()
+    conn.close()
+    return jsonify(_proteger_telefone(row)) if row else (jsonify({'erro': 'Conta não encontrada.'}), 404)
+
+
+@app.route('/api/cobrancas/contas/<int:id>/previa', methods=['POST'])
+def gerar_previa_conta_cobranca(id):
+    payload = request.get_json(silent=True) or {}
+    regra_id = payload.get('regra_id')
+    destinatario_id = payload.get('destinatario_id')
+    conn = get_db()
+    if not all(_tabela_existe(conn, tabela) for tabela in ('contas', 'regras_cobranca', 'destinatarios')):
+        conn.close()
+        return jsonify({'erro': 'Estrutura de cobranças ainda não disponível.'}), 503
+    conta = conn.execute('SELECT * FROM contas WHERE id=?', (id,)).fetchone()
+    regra = conn.execute('SELECT * FROM regras_cobranca WHERE id=? AND ativa=1', (regra_id,)).fetchone()
+    destinatario = conn.execute('SELECT * FROM destinatarios WHERE id=? AND ativo=1', (destinatario_id,)).fetchone()
+    if not conta:
+        conn.close(); return jsonify({'erro': 'Conta não encontrada.'}), 404
+    if not regra:
+        conn.close(); return jsonify({'erro': 'Regra ativa não encontrada.'}), 404
+    if not destinatario:
+        conn.close(); return jsonify({'erro': 'Destinatário ativo não encontrado.'}), 404
+    try:
+        previa = gerar_previa_cobranca(dict(conta), dict(destinatario), dict(regra), data_atual=datetime.now().date())
+        return jsonify(previa)
+    except ErroPreviaCobranca as exc:
+        return jsonify(exc.as_dict()), 422
+    finally:
+        conn.close()
+
+
+def _aprovar_mensagem(conn, mensagem_id, acao, usuario, justificativa):
+    tabelas = ('mensagens', 'contas', 'destinatarios')
+    if not all(_tabela_existe(conn, tabela) for tabela in tabelas):
+        raise ErroAprovacaoMensagem('estrutura_indisponivel', 'Estrutura de mensagens, contas ou destinatários não disponível.')
+    colunas = {row[1] for row in conn.execute('PRAGMA table_info(mensagens)').fetchall()}
+    necessarias = {'justificativa', 'alterado_por', 'alterada_em'}
+    if not necessarias <= colunas:
+        raise ErroAprovacaoMensagem('migracao_pendente', 'Campos de auditoria da aprovação ainda não foram migrados.')
+    mensagem = conn.execute('SELECT * FROM mensagens WHERE id=?', (mensagem_id,)).fetchone()
+    if not mensagem:
+        raise ErroAprovacaoMensagem('mensagem_nao_encontrada', 'Mensagem não encontrada.')
+    conta = conn.execute('SELECT valor_pendente, status FROM contas WHERE id=?', (mensagem['conta_id'],)).fetchone()
+    destinatario = conn.execute('SELECT ativo FROM destinatarios WHERE id=?', (mensagem['destinatario_id'],)).fetchone()
+    conta_pendente = bool(conta and conta['valor_pendente'] is not None and float(conta['valor_pendente']) > 0 and str(conta['status']).upper() != 'PAGA')
+    resultado = transicionar_mensagem(dict(mensagem), acao, usuario=usuario, justificativa=justificativa, conta_pendente=conta_pendente, destinatario_ativo=bool(destinatario and destinatario['ativo']))
+    agora = resultado['data']
+    conn.execute('''UPDATE mensagens SET status=?, usuario_aprovou=?, aprovada_em=?, justificativa=?, alterado_por=?, alterada_em=?, erro=? WHERE id=?''',
+                 (resultado['status_armazenamento'], usuario if acao == 'aprovar' else None, agora if acao == 'aprovar' else None, resultado['justificativa'] or None, usuario, agora, resultado['justificativa'] or None, mensagem_id))
+    if _tabela_existe(conn, 'auditoria_cobranca'):
+        conn.execute('''INSERT INTO auditoria_cobranca (tabela_origem, registro_id, acao, usuario, dados_anterior, dados_novo, origem, observacao) VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+                     ('mensagens', mensagem_id, acao, usuario, json.dumps(dict(mensagem), ensure_ascii=False, default=str), json.dumps(resultado, ensure_ascii=False), 'api', resultado['justificativa']))
+    return resultado
+
+
+@app.route('/api/cobrancas/mensagens/<int:id>/aprovacao', methods=['POST'])
+def aprovar_mensagem_cobranca(id):
+    payload = request.get_json(silent=True) or {}
+    try:
+        conn = get_db()
+        resultado = _aprovar_mensagem(conn, id, payload.get('acao', ''), g.usuario['usuario'], payload.get('justificativa', ''))
+        conn.commit(); conn.close()
+        return jsonify(resultado)
+    except ErroAprovacaoMensagem as exc:
+        if 'conn' in locals(): conn.rollback(); conn.close()
+        return jsonify(exc.as_dict()), 409
+
+
+@app.route('/api/cobrancas/mensagens/aprovacao-lote', methods=['POST'])
+def aprovar_lote_mensagens_cobranca():
+    payload = request.get_json(silent=True) or {}
+    try:
+        ids = validar_lote(payload.get('ids', []))
+        conn = get_db(); resultados = []
+        for mensagem_id in ids:
+            resultados.append({'id': mensagem_id, **_aprovar_mensagem(conn, mensagem_id, payload.get('acao', ''), g.usuario['usuario'], payload.get('justificativa', ''))})
+        conn.commit(); conn.close()
+        return jsonify({'status': 'processado', 'resultados': resultados})
+    except ErroAprovacaoMensagem as exc:
+        if 'conn' in locals(): conn.rollback(); conn.close()
+        return jsonify(exc.as_dict()), 409
+
+
+@app.route('/api/cobrancas/mensagens/historico')
+def historico_mensagens_cobranca():
+    conn = get_db()
+    if not _tabela_existe(conn, 'mensagens'):
+        conn.close(); return jsonify({'mensagens': [], 'estrutura_disponivel': False})
+    params = request.args
+    where, valores = [], []
+    for campo in ('m.status', 'c.arquivo_origem', 'c.orgao'):
+        chave = campo.split('.')[1]
+        if params.get(chave): where.append(f"LOWER(COALESCE({campo}, '')) LIKE LOWER(?)"); valores.append(f"%{params[chave]}%")
+    if params.get('usuario'):
+        where.append("LOWER(COALESCE(m.usuario_aprovou, m.alterado_por, '')) LIKE LOWER(?)"); valores.append(f"%{params['usuario']}%")
+    if params.get('data_inicio'):
+        where.append('COALESCE(m.enviada_em, m.criada_em) >= ?'); valores.append(params['data_inicio'] + 'T00:00:00')
+    if params.get('data_fim'):
+        where.append('COALESCE(m.enviada_em, m.criada_em) <= ?'); valores.append(params['data_fim'] + 'T23:59:59')
+    query = '''SELECT m.id, m.conta_id, m.destinatario_id, m.regra_id, m.competencia, m.tipo_alerta,
+        m.texto, m.status, m.provedor, m.identificador_externo, m.tentativa, m.criada_em, m.enviada_em,
+        m.resposta_provedor, m.erro, m.usuario_aprovou, m.aprovada_em, m.justificativa,
+        c.orgao, c.arquivo_origem, c.identificador AS conta_identificador
+        FROM mensagens m LEFT JOIN contas c ON c.id=m.conta_id'''
+    if where: query += ' WHERE ' + ' AND '.join(where)
+    rows = conn.execute(query + ' ORDER BY COALESCE(m.enviada_em, m.criada_em) DESC, m.id DESC LIMIT 500', valores).fetchall()
+    conn.close()
+    return jsonify({'mensagens': [dict(row) for row in rows], 'estrutura_disponivel': True})
+
+
+@app.route('/api/cobrancas/auditoria')
+def auditoria_cobranca_api():
+    conn = get_db()
+    if not _tabela_existe(conn, 'auditoria_cobranca'):
+        conn.close(); return jsonify({'eventos': [], 'estrutura_disponivel': False})
+    filtros = {chave: request.args.get(chave) for chave in ('usuario', 'arquivo_origem', 'orgao', 'status', 'tipo_evento', 'data_inicio', 'data_fim')}
+    eventos = listar_auditoria(conn, filtros)
+    conn.close()
+    return jsonify({'eventos': eventos, 'estrutura_disponivel': True})
 
 
 @app.route('/api/logs')
