@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAMF v2.0 | Processamento Profissional de Faturas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.7.14/dist/vue.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <style>
+        :root {
+            --cor-principal: #2563eb;
+            --cor-sucesso: #10b981;
+            --cor-aviso: #f59e0b;
+            --cor-erro: #ef4444;
+            --cor-info: #0ea5e9;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+        
+        .header {
+            background: white;
+            border-bottom: 2px solid var(--cor-principal);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .badge-compartilhado {
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        
+        .badge-exclusivo {
+            background: #ede9fe;
+            color: #5b21b6;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        
+        .badge-revisao {
+            background: #fef3c7;
+            color: #92400e;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        
+        .card-indicador {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .card-indicador:hover {
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            transform: translateY(-4px);
+        }
+        
+        .tabelas-container {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .tab-btn {
+            padding: 1rem 1.5rem;
+            font-weight: 600;
+            color: #6b7280;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .tab-btn.active {
+            color: var(--cor-principal);
+            border-bottom-color: var(--cor-principal);
+        }
+        
+        .tab-btn:hover {
+            background: #f9fafb;
+        }
+        
+        .btn-primary {
+            background: var(--cor-principal);
+            color: white;
+            padding: 0.625rem 1.25rem;
+            border-radius: 8px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            background: #1d4ed8;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #e5e7eb;
+            color: #374151;
+            padding: 0.625rem 1.25rem;
+            border-radius: 8px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-secondary:hover {
+            background: #d1d5db;
+        }
+        
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #6ee7b7;
+        }
+        
+        .alert-error {
+            background: #fee2e2;
+            color: #7f1d1d;
+            border: 1px solid #fca5a5;
+        }
+        
+        .alert-warning {
+            background: #fef3c7;
+            color: #78350f;
+            border: 1px solid #fcd34d;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid #f3f4f6;
+            border-top: 2px solid var(--cor-principal);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        thead {
+            background: #f9fafb;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        
+        th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 700;
+            color: #374151;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid #f3f4f6;
+            color: #374151;
+        }
+        
+        tr:hover {
+            background: #f9fafb;
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 2rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .input, .select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-bottom: 0.75rem;
+            transition: border-color 0.3s ease;
+        }
+        
+        .input:focus, .select:focus {
+            outline: none;
+            border-color: var(--cor-principal);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+        
+        @media (max-width: 768px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <div class="header sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-black text-blue-600">SAMF v2.0</h1>
+                    <p class="text-sm text-gray-500 font-medium">Sistema Profissional de Processamento de Faturas</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-sm text-gray-600">
+                        <i class="fas fa-check-circle text-green-500"></i>
+                        Sistema Online
+                    </p>
+                    <p class="text-xs text-gray-400">Última atualização: {{ new Date().toLocaleTimeString('pt-BR') }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Container Principal -->
+        <div class="max-w-7xl mx-auto px-6 py-8">
+            
+            <!-- Mensagens -->
+            <div v-if="mensagem_sucesso" class="alert alert-success">
+                <i class="fas fa-check-circle"></i> {{ mensagem_sucesso }}
+            </div>
+            <div v-if="mensagem_erro" class="alert alert-error">
+                <i class="fas fa-exclamation-circle"></i> {{ mensagem_erro }}
+            </div>
+            
+            <!-- Abas -->
+            <div class="tabelas-container mb-8">
+                <div class="flex border-b border-gray-200 bg-white">
+                    <button 
+                        v-for="tab in ['dashboard', 'faturas', 'revisao', 'rateios', 'validacao']"
+                        :key="tab"
+                        @click="mudar_tab(tab)"
+                        :class="['tab-btn', { 'active': tab_ativo === tab }]"
+                    >
+                        {{ { 'dashboard': '📊 Dashboard', 'faturas': '📋 Faturas', 'revisao': '⚠️ Revisão', 'rateios': '📊 Rateios', 'validacao': '✓ Validação' }[tab] }}
+                    </button>
+                </div>
+                
+                <!-- Conteúdo das Abas -->
+                <div class="p-6">
+                    <!-- TAB: DASHBOARD -->
+                    <div v-if="tab_ativo === 'dashboard'">
+                        <div v-if="loading" class="text-center py-8">
+                            <div class="spinner mx-auto mb-4"></div>
+                            <p class="text-gray-600">Carregando dashboard...</p>
+                        </div>
+                        
+                        <div v-else-if="dashboard" class="space-y-8">
+                            <!-- KPIs -->
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                                <div class="card-indicador">
+                                    <p class="text-gray-500 font-bold text-sm uppercase mb-2">Total de Faturas</p>
+                                    <h2 class="text-4xl font-black text-blue-600">{{ dashboard.resumo.total_faturas }}</h2>
+                                </div>
+                                <div class="card-indicador">
+                                    <p class="text-gray-500 font-bold text-sm uppercase mb-2">Valor Processado</p>
+                                    <h2 class="text-2xl font-black text-green-600">{{ formatar_valor(dashboard.resumo.valor_total_processado) }}</h2>
+                                </div>
+                                <div class="card-indicador">
+                                    <p class="text-gray-500 font-bold text-sm uppercase mb-2">Taxa de Sucesso</p>
+                                    <h2 class="text-4xl font-black text-blue-600">{{ dashboard.resumo.taxa_sucesso }}%</h2>
+                                </div>
+                                <div class="card-indicador">
+                                    <p class="text-gray-500 font-bold text-sm uppercase mb-2">Em Revisão</p>
+                                    <h2 class="text-4xl font-black text-orange-500">{{ dashboard.resumo.em_revisao }}</h2>
+                                </div>
+                            </div>
+                            
+                            <!-- Gráficos -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <!-- Top Serviços -->
+                                <div class="bg-white p-6 rounded-12 border border-gray-200">
+                                    <h3 class="font-bold text-lg mb-4">Top Serviços Processados</h3>
+                                    <div class="space-y-3">
+                                        <div v-for="(srv, i) in dashboard.top_servicos" :key="i" class="flex justify-between items-center pb-3 border-b">
+                                            <span class="text-sm font-medium">{{ srv.servico }}</span>
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-gray-400 text-xs">{{ srv.qtd }} faturas</span>
+                                                <span class="font-bold text-blue-600">{{ formatar_valor(srv.valor) }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Distribuição por Órgão -->
+                                <div class="bg-white p-6 rounded-12 border border-gray-200">
+                                    <h3 class="font-bold text-lg mb-4">Distribuição por Órgão</h3>
+                                    <div class="space-y-3">
+                                        <div v-for="(org, i) in dashboard.distribuicao_orgaos.slice(0, 8)" :key="i" class="flex justify-between items-center pb-3 border-b">
+                                            <span class="text-sm font-medium">{{ org.orgao }}</span>
+                                            <span class="font-bold text-green-600">{{ formatar_valor(org.valor) }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- TAB: FATURAS -->
+                    <div v-if="tab_ativo === 'faturas'" class="space-y-4">
+                        <!-- Filtros -->
+                        <div class="bg-gray-50 p-4 rounded-lg mb-6">
+                            <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                                <input v-model="filtros.busca" type="text" class="input" placeholder="Buscar por nome, fornecedor...">
+                                <select v-model="filtros.status" class="select">
+                                    <option value="">Status: Todos</option>
+                                    <option value="pendente">Pendente</option>
+                                    <option value="processado">Processado</option>
+                                    <option value="lançado">Lançado</option>
+                                </select>
+                                <select v-model="filtros.classificacao" class="select">
+                                    <option value="">Classificação: Todos</option>
+                                    <option value="compartilhado">Compartilhado</option>
+                                    <option value="exclusivo">Exclusivo</option>
+                                </select>
+                                <input v-model="filtros.competencia" type="month" class="input">
+                                <button @click="carregar_faturas()" class="btn-primary">
+                                    <i class="fas fa-search"></i> Filtrar
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Tabela -->
+                        <div v-if="loading" class="text-center py-8">
+                            <div class="spinner mx-auto mb-4"></div>
+                            <p class="text-gray-600">Carregando faturas...</p>
+                        </div>
+                        
+                        <table v-else>
+                            <thead>
+                                <tr>
+                                    <th>Arquivo</th>
+                                    <th>Fornecedor</th>
+                                    <th>Competência</th>
+                                    <th>Classificação</th>
+                                    <th>Valor</th>
+                                    <th>Status</th>
+                                    <th>Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="f in faturas" :key="f.id">
+                                    <td class="font-medium text-sm">{{ f.nome_arquivo }}</td>
+                                    <td>{{ f.fornecedor }}</td>
+                                    <td>{{ f.competencia }}</td>
+                                    <td>
+                                        <span v-if="f.classificacao === 'compartilhado'" class="badge-compartilhado">Compartilhado</span>
+                                        <span v-else-if="f.classificacao === 'exclusivo'" class="badge-exclusivo">Exclusivo</span>
+                                        <span v-else class="badge-revisao">Revisão</span>
+                                    </td>
+                                    <td class="font-bold text-green-600">{{ formatar_valor(f.valor) }}</td>
+                                    <td>
+                                        <span v-if="f.status === 'lançado'" class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">✓ Lançado</span>
+                                        <span v-else class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">{{ f.status }}</span>
+                                    </td>
+                                    <td>
+                                        <button @click="ver_detalhes(f.id)" class="btn-secondary text-xs">Detalhes</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- TAB: REVISÃO -->
+                    <div v-if="tab_ativo === 'revisao'">
+                        <div v-if="loading" class="text-center py-8">
+                            <div class="spinner mx-auto mb-4"></div>
+                            <p class="text-gray-600">Carregando faturas em revisão...</p>
+                        </div>
+                        
+                        <div v-else-if="faturas_em_revisao.length === 0" class="bg-blue-50 p-8 text-center rounded-lg">
+                            <i class="fas fa-check-circle text-4xl text-green-500 mb-4"></i>
+                            <p class="text-gray-700 font-medium">Nenhuma fatura aguardando revisão!</p>
+                            <p class="text-gray-500 text-sm">Todas as faturas foram classificadas.</p>
+                        </div>
+                        
+                        <div v-else class="space-y-4">
+                            <div v-for="f in faturas_em_revisao" :key="f.id" class="bg-yellow-50 p-6 rounded-lg border-l-4 border-yellow-400">
+                                <div class="flex justify-between items-start mb-3">
+                                    <div>
+                                        <h4 class="font-bold text-gray-800">{{ f.nome_arquivo }}</h4>
+                                        <p class="text-sm text-gray-600">Fornecedor: {{ f.fornecedor }}</p>
+                                    </div>
+                                    <span class="text-xs bg-orange-200 text-orange-800 px-2 py-1 rounded-full">Confiança: {{ (f.confianca * 100).toFixed(0) }}%</span>
+                                </div>
+                                <p class="text-sm text-gray-700 mb-4"><strong>Motivo:</strong> {{ f.motivo_revisao }}</p>
+                                <p class="text-sm text-gray-600 mb-4"><strong>Complemento:</strong> {{ f.complemento || '-' }}</p>
+                                <div class="flex gap-2">
+                                    <button @click="classificar_fatura(f.id, 'compartilhado', 'Classificado manualmente como compartilhado')" class="btn-primary text-sm">
+                                        <i class="fas fa-check"></i> Compartilhado
+                                    </button>
+                                    <button @click="classificar_fatura(f.id, 'exclusivo', 'Classificado manualmente como exclusivo')" class="btn-secondary text-sm">
+                                        <i class="fas fa-check"></i> Exclusivo
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- TAB: VALIDAÇÃO -->
+                    <div v-if="tab_ativo === 'validacao'" class="space-y-6">
+                        <div v-if="loading" class="text-center py-8">
+                            <div class="spinner mx-auto mb-4"></div>
+                            <p class="text-gray-600">Verificando consistência...</p>
+                        </div>
+                        
+                        <div v-else>
+                            <!-- Validação de Valores -->
+                            <div class="bg-white p-6 rounded-lg border border-gray-200">
+                                <h3 class="font-bold text-lg mb-4">✓ Validação de Valores</h3>
+                                <div class="grid grid-cols-3 gap-4">
+                                    <div>
+                                        <p class="text-gray-500 text-sm">Valor Original</p>
+                                        <p class="text-2xl font-bold text-gray-800">{{ formatar_valor(validacao.validacao_valores.valor_original) }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-gray-500 text-sm">Valor Lançado</p>
+                                        <p class="text-2xl font-bold text-gray-800">{{ formatar_valor(validacao.validacao_valores.valor_lancado) }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-gray-500 text-sm">Diferença</p>
+                                        <p :class="['text-2xl font-bold', validacao.validacao_valores.consistente ? 'text-green-600' : 'text-red-600']">
+                                            {{ formatar_valor(validacao.validacao_valores.diferenca) }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="mt-4 p-3 rounded" :class="validacao.validacao_valores.consistente ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'">
+                                    <i :class="validacao.validacao_valores.consistente ? 'fas fa-check-circle' : 'fas fa-exclamation-circle'"></i>
+                                    {{ validacao.validacao_valores.consistente ? 'Valores consistentes ✓' : 'Divergência detectada!' }}
+                                </div>
+                            </div>
+                            
+                            <!-- Divergências -->
+                            <div v-if="Object.keys(validacao.divergencias).length > 0" class="bg-white p-6 rounded-lg border border-gray-200">
+                                <h3 class="font-bold text-lg mb-4">⚠️ Divergências Encontradas</h3>
+                                <ul class="space-y-2">
+                                    <li v-for="(qtd, tipo) in validacao.divergencias" :key="tipo" class="flex justify-between py-2 border-b">
+                                        <span>{{ tipo }}</span>
+                                        <span class="font-bold text-orange-600">{{ qtd }} item(ns)</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/static/app_v2.js"></script>
+</body>
+</html>

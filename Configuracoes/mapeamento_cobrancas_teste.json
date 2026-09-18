@@ -1,0 +1,27 @@
+{
+  "versao_ativa": 1,
+  "historico": [
+    {
+      "versao": 1,
+      "aba": "Cobrancas",
+      "mapeamento": {
+        "orgao": "orgao",
+        "unidade": "unidade",
+        "fornecedor": "fornecedor",
+        "servico": "servico",
+        "competencia": "competencia",
+        "numero_fatura": "numero_fatura",
+        "data_vencimento": "data_vencimento",
+        "valor_original": "valor_original",
+        "valor_pago": "valor_pago",
+        "valor_pendente": "valor_pendente",
+        "responsavel": "responsavel",
+        "telefone_destinatario": "telefone_destinatario"
+      },
+      "observacoes": "Mapeamento local para a planilha ficticia de testes.",
+      "usuario": "sistema",
+      "alterado_em": "2026-08-20T23:00:00+00:00",
+      "ativo": true
+    }
+  ]
+}
