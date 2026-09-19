@@ -1,0 +1,41 @@
+========================================
+SAMF - COMANDOS PARA O TERMINAL (PowerShell)
+========================================
+
+1) Abrir o projeto:
+cd C:\CodeForge\SAMF-v2.0
+
+2) Habilitar execucao de scripts na sessao atual:
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+
+3) Ativar ambiente virtual:
+.\.venv\Scripts\Activate.ps1
+
+4) Instalar dependencias do backend:
+python -m pip install -r "Interface_Web\backend\requirements.txt"
+
+5) Instalar dependencias do processamento/integração:
+python -m pip install -r "Scripts\requirements.txt"
+
+6) Iniciar a API do SAMF:
+.\.venv\Scripts\python.exe Interface_Web\backend\app.py
+
+7) Verificar status da API no navegador:
+http://127.0.0.1:5000
+
+8) Verificar status via terminal:
+Invoke-RestMethod -Uri "http://127.0.0.1:5000/api/auth/status" -Method Get
+
+9) Iniciar o servico automatico (se necessario):
+.\.venv\Scripts\python.exe Scripts\servico_automatico.py
+
+10) Script pronto para iniciar tudo:
+.\iniciar_samf_manual.ps1
+
+========================================
+OBS:
+- Se o PowerShell bloquear a execucao do script, rode primeiro:
+  Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+- O erro mais comum foi falta da dependencia openpyxl, resolvido com:
+  python -m pip install -r "Scripts\requirements.txt"
+========================================

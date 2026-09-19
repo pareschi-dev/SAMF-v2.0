@@ -5,10 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SAMF PRO | Centro de Controle</title>
     <script>
+        window.tailwind = window.tailwind || {};
+        window.tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    boxShadow: {
+                        premium: '0 12px 35px rgba(15, 23, 42, 0.18)',
+                    },
+                },
+            },
+        };
+    </script>
+    <script>
         (() => {
-            const saved = localStorage.getItem('samf-theme');
-            const theme = saved || 'dark';
-            document.documentElement.dataset.theme = theme;
+            const saved = localStorage.getItem('theme') || localStorage.getItem('samf-theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const isDark = saved ? saved === 'dark' : prefersDark;
+            document.documentElement.classList.toggle('dark', isDark);
+            document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
         })();
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -16,18 +31,18 @@
     <style>
         :root {
             color-scheme: dark;
-            --samf-page: #0b0f19;
-            --samf-page-strong: #0d1117;
-            --samf-surface: rgba(15, 23, 42, 0.78);
-            --samf-surface-strong: rgba(15, 23, 42, 0.96);
-            --samf-surface-muted: rgba(17, 24, 39, 0.9);
-            --samf-input: rgba(15, 23, 42, 0.82);
-            --samf-text: #e5edf8;
-            --samf-text-muted: #9aa9bf;
-            --samf-text-subtle: #697c98;
-            --samf-border: rgba(148, 163, 184, 0.18);
-            --samf-hover: rgba(148, 163, 184, 0.08);
-            --samf-overlay: rgba(2, 6, 23, 0.78);
+            --samf-page: #09090b;
+            --samf-page-strong: #0b0b0e;
+            --samf-surface: rgba(24, 24, 27, 0.78);
+            --samf-surface-strong: rgba(24, 24, 27, 0.96);
+            --samf-surface-muted: rgba(24, 24, 27, 0.9);
+            --samf-input: rgba(24, 24, 27, 0.82);
+            --samf-text: #f4f4f5;
+            --samf-text-muted: #a1a1aa;
+            --samf-text-subtle: #71717a;
+            --samf-border: rgba(161, 161, 170, 0.18);
+            --samf-hover: rgba(161, 161, 170, 0.08);
+            --samf-overlay: rgba(9, 9, 11, 0.78);
             --samf-accent: #d4d4d8;
             --samf-accent-2: #a1a1aa;
             --samf-accent-3: #e4e4e7;
@@ -35,27 +50,27 @@
         }
         [data-theme="light"] {
             color-scheme: light;
-            --samf-page: #f3f4f6;
+            --samf-page: #f4f4f5;
             --samf-page-strong: #ffffff;
             --samf-surface: #ffffff;
             --samf-surface-strong: #ffffff;
-            --samf-surface-muted: #f8fafc;
+            --samf-surface-muted: #fafafa;
             --samf-input: #ffffff;
-            --samf-text: #1f2937;
-            --samf-text-muted: #6b7280;
-            --samf-text-subtle: #9ca3af;
-            --samf-border: #e2e8f0;
-            --samf-hover: #f3f4f6;
-            --samf-overlay: rgba(17, 24, 39, 0.72);
+            --samf-text: #18181b;
+            --samf-text-muted: #71717a;
+            --samf-text-subtle: #a1a1aa;
+            --samf-border: #e4e4e7;
+            --samf-hover: #f4f4f5;
+            --samf-overlay: rgba(24, 24, 27, 0.72);
         }
         [data-theme="dark"] {
             --samf-page: #09090b;
             --samf-page-strong: #0b0b0e;
-            --samf-surface: rgba(17, 17, 19, 0.82);
-            --samf-surface-strong: rgba(10, 10, 12, 0.96);
+            --samf-surface: rgba(24, 24, 27, 0.82);
+            --samf-surface-strong: rgba(9, 9, 11, 0.96);
             --samf-surface-muted: rgba(24, 24, 27, 0.9);
-            --samf-input: rgba(17, 17, 19, 0.88);
-            --samf-text: #f3f4f6;
+            --samf-input: rgba(24, 24, 27, 0.88);
+            --samf-text: #f4f4f5;
             --samf-text-muted: #a1a1aa;
             --samf-text-subtle: #71717a;
             --samf-border: rgba(255, 255, 255, 0.08);
@@ -67,6 +82,19 @@
             --samf-accent-4: #d4d4d8;
         }
         html, body { background: radial-gradient(circle at top left, rgba(255,255,255,0.02), transparent 32%), radial-gradient(circle at bottom right, rgba(255,255,255,0.02), transparent 28%), var(--samf-page); color: var(--samf-text); }
+
+        [data-theme="light"] .chart-label,
+        [data-theme="light"] .org-chart-label,
+        [data-theme="light"] .chart-value {
+            color: #3f3f46 !important;
+        }
+        [data-theme="light"] .chart-value {
+            font-weight: 700;
+        }
+        [data-theme="light"] .chart-track {
+            background: #f4f4f5;
+            border-color: #e4e4e7;
+        }
 
         [data-theme="dark"] [class*="text-blue-"],
         [data-theme="dark"] [class*="text-indigo-"],
@@ -84,68 +112,56 @@
             stroke: #d4d4d8 !important;
         }
 
-        [data-theme="dark"] [class*="bg-zinc-"],
-        [data-theme="dark"] [class*="bg-indigo-"],
-        [data-theme="dark"] [class*="bg-cyan-"],
-        [data-theme="dark"] [class*="bg-violet-"],
-        [data-theme="dark"] [class*="bg-purple-"],
-        [data-theme="dark"] [class*="bg-sky-"],
-        [data-theme="dark"] [class*="from-blue-"],
-        [data-theme="dark"] [class*="to-blue-"],
-        [data-theme="dark"] [class*="from-indigo-"],
-        [data-theme="dark"] [class*="to-indigo-"],
-        [data-theme="dark"] [class*="from-cyan-"],
-        [data-theme="dark"] [class*="to-cyan-"],
-        [data-theme="dark"] [class*="from-violet-"],
-        [data-theme="dark"] [class*="to-violet-"],
-        [data-theme="dark"] [class*="from-purple-"],
-        [data-theme="dark"] [class*="to-purple-"],
-        [data-theme="dark"] [class*="from-sky-"],
-        [data-theme="dark"] [class*="to-sky-"] {
-            background-color: rgba(24, 24, 27, 0.9) !important;
-            background-image: linear-gradient(135deg, rgba(39, 39, 42, 0.96), rgba(17, 17, 19, 0.92)) !important;
-            --tw-gradient-from: rgba(212, 212, 216, 0.95) !important;
-            --tw-gradient-to: rgba(39, 39, 42, 0.95) !important;
-            --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
-            color: #f4f4f5 !important;
+        [data-theme="dark"] #powerbi-resumo {
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.96) 0%, rgba(9, 9, 11, 0.96) 100%) !important;
+            border-color: rgba(148, 163, 184, 0.18) !important;
+            box-shadow: 0 24px 60px rgba(2, 6, 23, 0.52), inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
         }
 
-        [data-theme="dark"] [class*="border-blue-"],
-        [data-theme="dark"] [class*="border-indigo-"],
-        [data-theme="dark"] [class*="border-cyan-"],
-        [data-theme="dark"] [class*="border-violet-"],
-        [data-theme="dark"] [class*="border-purple-"],
-        [data-theme="dark"] [class*="border-sky-"] {
-            border-color: rgba(255, 255, 255, 0.08) !important;
+        [data-theme="dark"] #powerbi-resumo .rounded-2xl,
+        [data-theme="dark"] #powerbi-resumo .chart-row,
+        [data-theme="dark"] #powerbi-resumo .donut-total,
+        [data-theme="dark"] #powerbi-resumo .legend-row {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.72), rgba(24, 24, 27, 0.9)) !important;
+            background-image: linear-gradient(135deg, rgba(15, 23, 42, 0.72), rgba(24, 24, 27, 0.9)) !important;
+            border-color: rgba(148, 163, 184, 0.18) !important;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
         }
 
-        [data-theme="dark"] .text-zinc-200,
-        [data-theme="dark"] .text-zinc-300,
-        [data-theme="dark"] .text-zinc-400,
-        [data-theme="dark"] .text-zinc-500,
-        [data-theme="dark"] .bg-zinc-700,
-        [data-theme="dark"] .bg-zinc-600,
-        [data-theme="dark"] .bg-zinc-500,
-        [data-theme="dark"] .bg-zinc-200,
-        [data-theme="dark"] .border-zinc-500,
-        [data-theme="dark"] .border-zinc-300,
-        [data-theme="dark"] .from-zinc-500,
-        [data-theme="dark"] .to-zinc-500,
-        [data-theme="dark"] .from-zinc-500,
-        [data-theme="dark"] .bg-gradient-to-br {
-            background: rgba(24, 24, 27, 0.9) !important;
-            background-image: linear-gradient(135deg, rgba(39, 39, 42, 0.96), rgba(17, 17, 19, 0.92)) !important;
-            color: #f4f4f5 !important;
+        [data-theme="dark"] #powerbi-resumo .chart-track {
+            background: rgba(148, 163, 184, 0.12) !important;
+            border-color: rgba(148, 163, 184, 0.12) !important;
+        }
+
+        [data-theme="dark"] #powerbi-resumo .chart-value,
+        [data-theme="dark"] #powerbi-resumo .legend-value,
+        [data-theme="dark"] #powerbi-resumo .donut-total span,
+        [data-theme="dark"] #powerbi-resumo .chart-label,
+        [data-theme="dark"] #powerbi-resumo .legend-label,
+        [data-theme="dark"] #powerbi-resumo #powerbi-periodo,
+        [data-theme="dark"] #powerbi-resumo #powerbi-mes-atual,
+        [data-theme="dark"] #powerbi-resumo #powerbi-total,
+        [data-theme="dark"] #powerbi-resumo #powerbi-servicos-qtd,
+        [data-theme="dark"] #powerbi-resumo #powerbi-orgaos-qtd {
+            color: #f8fafc !important;
+        }
+
+        [data-theme="dark"] .theme-surface,
+        [data-theme="dark"] .theme-muted,
+        [data-theme="dark"] .glass-panel,
+        [data-theme="dark"] .theme-border {
+            background: rgba(24, 24, 27, 0.82) !important;
             border-color: rgba(255, 255, 255, 0.08) !important;
+            color: #f4f4f5 !important;
         }
         body { transition: background-color 0.2s ease, color 0.2s ease; font-family: Inter, "SF Pro Display", "Segoe UI", sans-serif; }
         .theme-surface { background: var(--samf-surface); color: var(--samf-text); }
         .theme-muted { background: var(--samf-surface-muted); color: var(--samf-text-muted); }
         .theme-border { border-color: var(--samf-border); }
         .glass-panel {
-            background: rgba(15, 23, 42, 0.72);
-            border: 1px solid rgba(148, 163, 184, 0.14);
-            box-shadow: 0 10px 25px rgba(2, 6, 23, 0.22);
+            background: rgba(24, 24, 27, 0.72);
+            border: 1px solid rgba(161, 161, 170, 0.14);
+            box-shadow: 0 10px 25px rgba(9, 9, 11, 0.22);
             backdrop-filter: blur(18px);
             -webkit-backdrop-filter: blur(18px);
         }
@@ -164,22 +180,35 @@
             gap: 0.8rem;
             min-height: 2.5rem;
         }
+        .dashboard-chart-card {
+            align-self: start;
+            vertical-align: top;
+            transform: translateY(0);
+        }
+        .dashboard-chart-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 42px rgba(15, 23, 42, 0.14);
+        }
+        .dashboard-chart-card:focus-visible {
+            outline: 2px solid #60a5fa;
+            outline-offset: 3px;
+        }
         .chart-label {
             min-width: 0;
             font-size: 11px;
             font-weight: 600;
-            color: #cbd5e1;
-            text-overflow: ellipsis;
-            overflow: hidden;
-            white-space: nowrap;
+            color: #d4d4d8;
+            overflow-wrap: anywhere;
+            white-space: normal;
+            line-height: 1.25;
         }
         .chart-track {
             position: relative;
             height: 0.72rem;
             border-radius: 999px;
-            background: rgba(148, 163, 184, 0.08);
+            background: rgba(161, 161, 170, 0.08);
             overflow: hidden;
-            border: 1px solid rgba(148, 163, 184, 0.05);
+            border: 1px solid rgba(161, 161, 170, 0.05);
         }
         .chart-bar {
             position: absolute;
@@ -192,8 +221,22 @@
         .chart-value {
             justify-self: end;
             font-size: 11px;
-            color: #9ca3af;
+            color: #a1a1aa;
             font-weight: 600;
+        }
+        #org-chart .chart-row,
+        #powerbi-orgaos .chart-row {
+            grid-template-columns: minmax(0, 1.25fr) minmax(0, 2.75fr);
+            gap: 1rem;
+        }
+        #org-chart .chart-value,
+        #powerbi-orgaos .chart-value {
+            display: none !important;
+        }
+        #org-chart .chart-label,
+        #powerbi-orgaos .chart-label {
+            overflow-wrap: anywhere;
+            white-space: normal;
         }
         .chart-tooltip {
             position: absolute;
@@ -204,12 +247,12 @@
             pointer-events: none;
             white-space: nowrap;
             border-radius: 8px;
-            border: 1px solid rgba(148, 163, 184, 0.16);
-            background: rgba(15, 23, 42, 0.96);
-            color: #e2e8f0;
+            border: 1px solid rgba(161, 161, 170, 0.16);
+            background: rgba(24, 24, 27, 0.96);
+            color: #e4e4e7;
             font-size: 10px;
             padding: 0.4rem 0.5rem;
-            box-shadow: 0 12px 30px rgba(2, 6, 23, 0.5);
+            box-shadow: 0 12px 30px rgba(9, 9, 11, 0.5);
             transition: opacity 0.18s ease;
             z-index: 20;
         }
@@ -221,7 +264,7 @@
             font-size: 11px;
             letter-spacing: 0.08em;
             font-weight: 700;
-            color: #dfe7f6;
+            color: #e4e4e7;
             text-transform: uppercase;
         }
         .donut-total {
@@ -238,14 +281,14 @@
             font-size: 1.2rem;
             line-height: 1.1;
             letter-spacing: -0.04em;
-            color: #f8fbff;
+            color: #fafafa;
         }
         .donut-total span {
             margin-top: 0.2rem;
             font-size: 10px;
             text-transform: uppercase;
             letter-spacing: 0.18em;
-            color: #9ca3af;
+            color: #a1a1aa;
         }
         .donut-legend {
             display: flex;
@@ -259,7 +302,7 @@
             grid-template-columns: auto 1fr auto;
             align-items: center;
             gap: 0.65rem;
-            color: #dfe7f6;
+            color: #e4e4e7;
             font-size: 11px;
             font-weight: 600;
         }
@@ -270,29 +313,44 @@
             display: inline-block;
         }
         .legend-label {
-            color: #dfe7f6;
+            color: #e4e4e7;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
         .legend-value {
-            color: #9ca3af;
+            color: #a1a1aa;
             justify-self: end;
             font-size: 11px;
         }
         .kpi-card {
             position: relative;
             overflow: hidden;
-            border: 1px solid rgba(148, 163, 184, 0.12);
-            background: linear-gradient(180deg, rgba(15, 23, 42, 0.82), rgba(9, 13, 22, 0.9));
-            box-shadow: 0 12px 30px rgba(2, 6, 23, 0.18);
+            border: 1px solid rgba(148, 163, 184, 0.16);
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(9, 11, 17, 0.96));
+            box-shadow: 0 16px 36px rgba(2, 6, 23, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.04);
             transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .kpi-card::before {
+            content: "";
+            position: absolute;
+            inset: 0 auto auto 0;
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, rgba(255,255,255,0.2), transparent 35%);
+            pointer-events: none;
         }
         .kpi-card:hover,
         .card-hover:hover {
             transform: translateY(-2px);
-            border-color: rgba(96, 165, 250, 0.34);
-            box-shadow: 0 18px 40px rgba(59, 130, 246, 0.12);
+            border-color: rgba(125, 211, 252, 0.38);
+            box-shadow: 0 20px 44px rgba(59, 130, 246, 0.12), inset 0 1px 0 rgba(255,255,255,0.06);
+        }
+        .kpi-card h2,
+        .kpi-card p,
+        .kpi-card span {
+            position: relative;
+            z-index: 1;
         }
         .sidebar-item, .sidebar-subitem {
             border-left: 2px solid transparent;
@@ -300,26 +358,53 @@
         }
         .sidebar-item.active,
         .sidebar-subitem.active {
-            background: rgba(59, 130, 246, 0.08);
-            border-left-color: rgba(96, 165, 250, 0.9);
-            color: #f8fbff !important;
+            background: rgba(161, 161, 170, 0.08);
+            border-left-color: rgba(212, 212, 216, 0.9);
+            color: #fafafa !important;
         }
         #sidebar {
-            background: rgba(15, 23, 42, 0.7);
-            border-right: 1px solid rgba(148, 163, 184, 0.12);
+            background: rgba(24, 24, 27, 0.7);
+            border-right: 1px solid rgba(161, 161, 170, 0.12);
             backdrop-filter: blur(18px);
         }
-        header {
-            background: rgba(11, 15, 25, 0.75);
-            border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+        #sidebar-hover-trigger { display: none; }
+        @media (min-width: 1024px) {
+            #sidebar-hover-trigger {
+                display: block;
+                position: fixed;
+                inset: 0 auto 0 0;
+                width: 18px;
+                z-index: 45;
+            }
+            #sidebar {
+                position: fixed;
+                inset: 0 auto 0 0;
+                width: 16rem;
+                transform: translateX(-100%);
+                transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.24s ease;
+                z-index: 40;
+            }
+            #sidebar.sidebar-hover-open {
+                transform: translateX(0);
+                box-shadow: 18px 0 40px rgba(0, 0, 0, 0.28);
+            }
+        }
+        #app-header {
+            background: rgba(11, 11, 13, 0.75);
+            border-bottom: 1px solid rgba(161, 161, 170, 0.12);
             backdrop-filter: blur(18px);
         }
         .theme-muted { background: var(--samf-surface-muted); color: var(--samf-text-muted); }
         .theme-border { border-color: var(--samf-border); }
         [data-theme="dark"] .bg-white { background-color: rgba(15, 23, 42, 0.82) !important; }
         [data-theme="dark"] .bg-gray-50 { background-color: rgba(15, 23, 42, 0.72) !important; }
-        [data-theme="dark"] .bg-gray-100 { background-color: rgba(2, 6, 23, 0.72) !important; }
-        [data-theme="dark"] .bg-gray-200 { background-color: rgba(15, 23, 42, 0.9) !important; }
+        [data-theme="dark"] .bg-gray-100 { background-color: rgba(9, 9, 11, 0.72) !important; }
+        [data-theme="dark"] .bg-gray-200 { background-color: rgba(24, 24, 27, 0.9) !important; }
+        [data-theme="dark"] .kpi-card {
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(9, 11, 17, 0.98));
+            border-color: rgba(148, 163, 184, 0.18);
+            box-shadow: 0 18px 40px rgba(2, 6, 23, 0.32), inset 0 1px 0 rgba(255,255,255,0.04);
+        }
         [data-theme="dark"] .text-gray-800,
         [data-theme="dark"] .text-gray-700 { color: var(--samf-text) !important; }
         [data-theme="dark"] .text-gray-600,
@@ -341,9 +426,9 @@
         [data-theme="dark"] table thead { background-color: var(--samf-surface-muted); }
         [data-theme="dark"] table tbody tr:hover { background-color: var(--samf-hover); }
         [data-theme="dark"] ::-webkit-scrollbar { width: 10px; height: 10px; }
-        [data-theme="dark"] ::-webkit-scrollbar-track { background: #0b1120; }
-        [data-theme="dark"] ::-webkit-scrollbar-thumb { background: #263247; border-radius: 8px; }
-        [data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: #334155; }
+        [data-theme="dark"] ::-webkit-scrollbar-track { background: #09090b; }
+        [data-theme="dark"] ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 8px; }
+        [data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
         [data-theme="dark"] .shadow-sm,
         [data-theme="dark"] .shadow-lg,
         [data-theme="dark"] .shadow-2xl { box-shadow: 0 10px 28px rgba(0, 0, 0, 0.24); }
@@ -413,6 +498,16 @@
         [data-theme="dark"] #upcoming-cards [data-alerta-card][data-prioridade="urgente"] [data-alerta-valor-pendente] { color: #fca5a5; }
         [data-theme="dark"] #upcoming-cards [data-alerta-card][data-prioridade="atencao"] [data-alerta-valor-pendente] { color: #fcd34d; }
         [data-theme="dark"] #upcoming-cards [data-alerta-card][data-prioridade="normal"] [data-alerta-valor-pendente] { color: #86efac; }
+        #contas-proximas-cards { min-width: 0; }
+        #contas-proximas-cards .proxima-conta-card { min-width: 0; border: 1px solid var(--samf-border); border-left: 4px solid #d97706; border-radius: 12px; background: var(--samf-surface); color: var(--samf-text); box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08); transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease; }
+        #contas-proximas-cards .proxima-conta-card:hover { transform: translateY(-2px); border-color: rgba(217, 119, 6, 0.65); box-shadow: 0 18px 34px rgba(15, 23, 42, 0.14); }
+        #contas-proximas-cards .proxima-conta-label { color: var(--samf-text-muted); font-size: 0.68rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
+        #contas-proximas-cards .proxima-conta-identificador { max-width: 100%; overflow-wrap: anywhere; word-break: break-word; line-height: 1.15; }
+        #contas-proximas-cards .proxima-conta-card > header > div { min-width: 0; }
+        #contas-proximas-cards .proxima-conta-value { color: var(--samf-text); overflow-wrap: anywhere; }
+        #contas-proximas-cards .proxima-conta-pendente { color: #b45309; }
+        [data-theme="dark"] #contas-proximas-cards .proxima-conta-card { background: linear-gradient(145deg, rgba(24, 24, 27, 0.96), rgba(15, 23, 42, 0.94)); box-shadow: 0 16px 32px rgba(0, 0, 0, 0.22); }
+        [data-theme="dark"] #contas-proximas-cards .proxima-conta-pendente { color: #fcd34d; }
         @media (min-width: 1440px) { #upcoming-cards { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
         @media (max-width: 767px) {
             #vencimentos-alertas [aria-label="Resumo dos alertas de vencimentos"] > article { min-height: 6.5rem; }
@@ -427,10 +522,21 @@
         }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-        .sidebar-item { color: #4b5563; }
+        .sidebar-item { color: #52525b; }
         .sidebar-item.active { background: #2f2f2f; color: #ececec; font-weight: 700; }
         .sidebar-subitem.active { background: #2f2f2f; color: #ececec; font-weight: 700; }
-        .menu-label { padding: 1.25rem 1.5rem 0.5rem; font-size: 0.65rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #9ca3af; }
+        .menu-label { padding: 1.25rem 1.5rem 0.5rem; font-size: 0.65rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #a1a1aa; }
+        [data-theme="light"] #sidebar { background: #ffffff; border-right-color: #e4e4e7; }
+        [data-theme="light"] #sidebar .sidebar-item,
+        [data-theme="light"] #sidebar .sidebar-subitem { color: #2f2f36 !important; }
+        [data-theme="light"] #sidebar .sidebar-item.active,
+        [data-theme="light"] #sidebar .sidebar-subitem.active { background: linear-gradient(90deg, #f4f4f5 0%, #ebebf0 100%) !important; color: #111827 !important; border-left: 3px solid #27272a !important; box-shadow: inset 0 0 0 1px rgba(39, 39, 42, 0.06); }
+        [data-theme="light"] #sidebar .sidebar-item:hover,
+        [data-theme="light"] #sidebar .sidebar-subitem:hover { background: #f8f8fa !important; color: #111827 !important; }
+        [data-theme="light"] #sidebar .menu-label { color: #6b7280; }
+        [data-theme="light"] #sidebar h1,
+        [data-theme="light"] #sidebar h1.text-zinc-200 { color: #111827 !important; }
+        [data-theme="light"] #sidebar > div:last-child { background: #fafafa; border-color: #e4e4e7; }
         #sidebar { transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
         @media (prefers-reduced-motion: reduce) { #sidebar { transition: none; } }
         [data-theme="dark"] .sidebar-item.active,
@@ -449,9 +555,9 @@
         [data-theme="dark"] .bg-zinc-600,
         [data-theme="dark"] .bg-zinc-700,
         [data-theme="dark"] .bg-stone-600,
-        [data-theme="dark"] .bg-purple-600 { background-color: #ececec !important; color: #171717 !important; }
+        [data-theme="dark"] .bg-purple-600 { background-color: #ececec !important; color: #18181b !important; }
         [data-theme="dark"] .hover\:bg-zinc-700:hover,
-        [data-theme="dark"] .hover\:bg-zinc-600:hover { background-color: #ffffff !important; color: #171717 !important; }
+        [data-theme="dark"] .hover\:bg-zinc-600:hover { background-color: #ffffff !important; color: #18181b !important; }
         [data-theme="dark"] .border-zinc-100,
         [data-theme="dark"] .border-zinc-200,
         [data-theme="dark"] .border-zinc-300,
@@ -461,7 +567,7 @@
         [data-theme="dark"] .fatura-badge-shared,
         [data-theme="dark"] .fatura-badge-exclusive { background: #3a3a3a; color: #d1d1d1; border: 1px solid #4a4a4a; }
         [data-theme="dark"] .fatura-filter-panel button,
-        [data-theme="dark"] .faturas-filter-panel button { background: #ececec !important; color: #171717 !important; }
+        [data-theme="dark"] .faturas-filter-panel button { background: #ececec !important; color: #18181b !important; }
         [data-theme="dark"] .faturas-filter-panel button:hover { background: #ffffff !important; }
         [data-theme="dark"] :focus-visible { outline-color: #676767; }
         [data-theme="dark"] .fatura-file-icon { background: #3a3a3a; color: #d1d1d1; }
@@ -474,9 +580,10 @@
 
         <!-- Backdrop (mobile) -->
         <div id="sidebar-backdrop" onclick="closeSidebar()" class="hidden fixed inset-0 bg-black bg-opacity-40 z-30 lg:hidden"></div>
+        <div id="sidebar-hover-trigger" onmouseenter="mostrarSidebarHover()" aria-hidden="true"></div>
 
         <!-- Sidebar -->
-        <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-lg flex flex-col -translate-x-full lg:static lg:translate-x-0 lg:shrink-0">
+        <aside id="sidebar" onmouseenter="mostrarSidebarHover()" onmouseleave="ocultarSidebarHover()" class="fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-lg flex flex-col -translate-x-full lg:static lg:translate-x-0 lg:shrink-0">
             <div class="p-6 border-b flex items-start justify-between">
                 <div>
                     <h1 class="text-2xl font-black text-zinc-200 tracking-tight">SAMF PRO</h1>
@@ -544,35 +651,35 @@
         <div class="flex-1 flex flex-col min-w-0">
 
             <!-- Header -->
-            <header class="px-4 sm:px-8 py-4 flex items-center gap-3 sm:gap-4 z-20">
-                <button id="menu-toggle" onclick="openSidebar()" class="lg:hidden shrink-0 p-2 -ml-2 text-slate-300 hover:text-white hover:bg-slate-800/80 rounded-xl transition" aria-label="Abrir menu" aria-controls="sidebar" aria-expanded="false">
+            <header id="app-header" class="px-4 sm:px-8 py-4 flex items-center gap-3 sm:gap-4 z-20">
+                <button id="menu-toggle" onclick="openSidebar()" class="lg:hidden shrink-0 p-2 -ml-2 text-zinc-300 hover:text-white hover:bg-zinc-800/80 rounded-xl transition" aria-label="Abrir menu" aria-controls="sidebar" aria-expanded="false">
                     <i class="fas fa-bars text-lg"></i>
                 </button>
                 <div class="min-w-0">
-                    <h2 class="text-base sm:text-xl font-bold text-slate-100 truncate">
+                    <h2 class="text-base sm:text-xl font-bold text-zinc-100 truncate">
                         <i id="greeting-icon" class="fas fa-sun text-amber-400 mr-1"></i>
                         <span id="greeting-text">Bom dia!</span>
                     </h2>
-                    <p id="greeting-date" class="text-xs sm:text-sm text-slate-400 truncate"></p>
+                    <p id="greeting-date" class="text-xs sm:text-sm text-zinc-400 truncate"></p>
                 </div>
                 <div class="ml-auto flex items-center gap-3">
-                    <div class="hidden sm:flex items-center gap-2 rounded-xl border border-slate-700/80 bg-slate-900/80 px-3 py-2 text-sm font-medium text-slate-300">
+                    <div class="hidden sm:flex items-center gap-2 rounded-xl border border-zinc-700/80 bg-zinc-900/80 px-3 py-2 text-sm font-medium text-zinc-300">
                         <i id="section-icon" class="fas fa-chart-line text-zinc-300"></i>
                         <span id="section-title">Dashboard</span>
                     </div>
-                    <label class="hidden sm:flex items-center gap-2 rounded-xl border border-slate-700/80 bg-slate-900/80 px-3 py-2 text-sm text-slate-300">
-                        <i class="fas fa-calendar-alt text-slate-400"></i>
-                        <select class="bg-transparent text-slate-100 outline-none text-sm" aria-label="Selecionar competência">
+                    <label class="hidden sm:flex items-center gap-2 rounded-xl border border-zinc-700/80 bg-zinc-900/80 px-3 py-2 text-sm text-zinc-300">
+                        <i class="fas fa-calendar-alt text-zinc-400"></i>
+                        <select class="bg-transparent text-zinc-100 outline-none text-sm" aria-label="Selecionar competência">
                             <option>Set/2026</option>
                             <option>Out/2026</option>
                             <option>Nov/2026</option>
                         </select>
                     </label>
-                    <div class="flex items-center gap-2 rounded-xl border border-slate-700/80 bg-slate-900/80 px-2 py-1.5">
+                    <div class="flex items-center gap-2 rounded-xl border border-zinc-700/80 bg-zinc-900/80 px-2 py-1.5">
                         <div class="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-zinc-500 to-zinc-700 text-xs font-bold text-white">SP</div>
-                        <span id="user-label" class="hidden sm:inline text-xs text-slate-300">Acesso local</span>
+                        <span id="user-label" class="hidden sm:inline text-xs text-zinc-300">Acesso local</span>
                     </div>
-                    <button id="theme-toggle" onclick="alternarTema()" class="shrink-0 p-2 text-slate-300 hover:text-white hover:bg-slate-800/80 rounded-xl transition" type="button" aria-label="Ativar modo noturno" title="Ativar modo noturno">
+                    <button id="theme-toggle" onclick="alternarTema()" class="shrink-0 p-2 text-zinc-300 hover:text-white hover:bg-zinc-800/80 rounded-xl transition" type="button" aria-label="Ativar modo noturno" title="Ativar modo noturno">
                         <i id="theme-toggle-icon" class="fas fa-moon" aria-hidden="true"></i>
                     </button>
                 </div>
@@ -584,36 +691,39 @@
             <!-- Tab: Dashboard -->
             <div id="dash" class="tab-content active space-y-8">
                 <div class="grid grid-cols-2 xl:grid-cols-4 gap-4">
-                    <button onclick="showTab('faturas-todas')" class="kpi-card text-left rounded-2xl p-5 card-hover"><div class="mb-4 flex items-center justify-between"><p class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Total de faturas</p><span class="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-[10px] font-bold text-emerald-300">+12.4%</span></div><h2 id="stat-count" class="text-3xl font-black text-white">-</h2><p id="stat-valor" class="mt-2 text-base font-semibold text-emerald-300">-</p><div class="mt-4 h-10 w-full"><svg viewBox="0 0 220 30" class="h-full w-full"><path d="M0 22 L28 18 L60 20 L92 12 L120 15 L150 10 L180 7 L220 3" fill="none" stroke="#d4d4d8" stroke-width="2.5" stroke-linecap="round"/></svg></div></button>
-                    <button onclick="showTab('faturas-compartilhadas')" class="kpi-card text-left rounded-2xl p-5 card-hover"><div class="mb-4 flex items-center justify-between"><p class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Compartilhadas</p><span class="rounded-full border border-zinc-500/30 bg-zinc-500/10 px-2 py-1 text-[10px] font-bold text-zinc-200">+8.1%</span></div><h2 id="stat-compartilhadas" class="text-3xl font-black text-zinc-200">-</h2><p id="stat-compartilhadas-valor" class="mt-2 text-base font-semibold text-slate-300">-</p><div class="mt-4 h-10 w-full"><svg viewBox="0 0 220 30" class="h-full w-full"><path d="M0 18 L28 16 L60 17 L92 9 L120 11 L150 12 L180 8 L220 5" fill="none" stroke="#d4d4d8" stroke-width="2.5" stroke-linecap="round"/></svg></div></button>
-                    <button onclick="showTab('faturas-exclusivas')" class="kpi-card text-left rounded-2xl p-5 card-hover"><div class="mb-4 flex items-center justify-between"><p class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Exclusivas</p><span class="rounded-full border border-zinc-500/30 bg-zinc-500/10 px-2 py-1 text-[10px] font-bold text-zinc-200">+6.9%</span></div><h2 id="stat-exclusivas" class="text-3xl font-black text-zinc-200">-</h2><p id="stat-exclusivas-valor" class="mt-2 text-base font-semibold text-slate-300">-</p><div class="mt-4 h-10 w-full"><svg viewBox="0 0 220 30" class="h-full w-full"><path d="M0 15 L28 12 L60 13 L92 8 L120 10 L150 6 L180 5 L220 2" fill="none" stroke="#d4d4d8" stroke-width="2.5" stroke-linecap="round"/></svg></div></button>
-                    <button onclick="showTab('faturas-revisao')" class="kpi-card text-left rounded-2xl p-5 card-hover"><div class="mb-4 flex items-center justify-between"><p class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Revisão</p><span class="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-[10px] font-bold text-amber-300">-3.2%</span></div><h2 id="stat-revisao" class="text-3xl font-black text-amber-300">-</h2><p id="stat-revisao-valor" class="mt-2 text-base font-semibold text-slate-300">-</p><div class="mt-4 h-10 w-full"><svg viewBox="0 0 220 30" class="h-full w-full"><path d="M0 20 L28 22 L60 21 L92 18 L120 16 L150 17 L180 15 L220 12" fill="none" stroke="#d4d4d8" stroke-width="2.5" stroke-linecap="round"/></svg></div></button>
-                    <div class="kpi-card rounded-2xl p-5"><p class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Erros</p><h2 id="stat-erros" class="mt-4 text-3xl font-black text-red-400">-</h2></div>
-                    <div class="kpi-card rounded-2xl p-5"><p class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Duplicadas</p><h2 id="stat-duplicadas" class="mt-4 text-3xl font-black text-slate-200">-</h2></div>
-                    <div class="kpi-card rounded-2xl p-5"><p class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Pendentes na entrada</p><h2 id="stat-pendentes" class="mt-4 text-3xl font-black text-amber-300">-</h2></div>
-                    <div class="kpi-card rounded-2xl p-5"><p class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Backend</p><h2 id="stat-backend" class="mt-4 text-lg font-black text-slate-200">Aguardando sessão</h2><p id="stat-ultima" class="mt-2 text-xs text-slate-400">Última execução: -</p></div>
+                    <button onclick="showTab('faturas-todas')" class="kpi-card text-left rounded-2xl p-5 card-hover"><div class="mb-4 flex items-center justify-between"><p class="text-[10px] font-black uppercase tracking-[0.22em] text-zinc-400">Total de faturas</p><span class="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-[10px] font-bold text-emerald-300">+12.4%</span></div><h2 id="stat-count" class="text-3xl font-black text-white">-</h2><p id="stat-valor" class="mt-2 text-base font-semibold text-emerald-300">-</p><div class="mt-4 h-10 w-full"><svg viewBox="0 0 220 30" class="h-full w-full"><path d="M0 22 L28 18 L60 20 L92 12 L120 15 L150 10 L180 7 L220 3" fill="none" stroke="#d4d4d8" stroke-width="2.5" stroke-linecap="round"/></svg></div></button>
+                    <button onclick="showTab('faturas-compartilhadas')" class="kpi-card text-left rounded-2xl p-5 card-hover"><div class="mb-4 flex items-center justify-between"><p class="text-[10px] font-black uppercase tracking-[0.22em] text-zinc-400">Compartilhadas</p><span class="rounded-full border border-zinc-500/30 bg-zinc-500/10 px-2 py-1 text-[10px] font-bold text-zinc-200">+8.1%</span></div><h2 id="stat-compartilhadas" class="text-3xl font-black text-zinc-200">-</h2><p id="stat-compartilhadas-valor" class="mt-2 text-base font-semibold text-zinc-300">-</p><div class="mt-4 h-10 w-full"><svg viewBox="0 0 220 30" class="h-full w-full"><path d="M0 18 L28 16 L60 17 L92 9 L120 11 L150 12 L180 8 L220 5" fill="none" stroke="#d4d4d8" stroke-width="2.5" stroke-linecap="round"/></svg></div></button>
+                    <button onclick="showTab('faturas-exclusivas')" class="kpi-card text-left rounded-2xl p-5 card-hover"><div class="mb-4 flex items-center justify-between"><p class="text-[10px] font-black uppercase tracking-[0.22em] text-zinc-400">Exclusivas</p><span class="rounded-full border border-zinc-500/30 bg-zinc-500/10 px-2 py-1 text-[10px] font-bold text-zinc-200">+6.9%</span></div><h2 id="stat-exclusivas" class="text-3xl font-black text-zinc-200">-</h2><p id="stat-exclusivas-valor" class="mt-2 text-base font-semibold text-zinc-300">-</p><div class="mt-4 h-10 w-full"><svg viewBox="0 0 220 30" class="h-full w-full"><path d="M0 15 L28 12 L60 13 L92 8 L120 10 L150 6 L180 5 L220 2" fill="none" stroke="#d4d4d8" stroke-width="2.5" stroke-linecap="round"/></svg></div></button>
+                    <button onclick="showTab('faturas-revisao')" class="kpi-card text-left rounded-2xl p-5 card-hover"><div class="mb-4 flex items-center justify-between"><p class="text-[10px] font-black uppercase tracking-[0.22em] text-zinc-400">Revisão</p><span class="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-[10px] font-bold text-amber-300">-3.2%</span></div><h2 id="stat-revisao" class="text-3xl font-black text-amber-300">-</h2><p id="stat-revisao-valor" class="mt-2 text-base font-semibold text-zinc-300">-</p><div class="mt-4 h-10 w-full"><svg viewBox="0 0 220 30" class="h-full w-full"><path d="M0 20 L28 22 L60 21 L92 18 L120 16 L150 17 L180 15 L220 12" fill="none" stroke="#d4d4d8" stroke-width="2.5" stroke-linecap="round"/></svg></div></button>
+                    <div class="kpi-card rounded-2xl p-5"><p class="text-[10px] font-black uppercase tracking-[0.22em] text-zinc-400">Erros</p><h2 id="stat-erros" class="mt-4 text-3xl font-black text-red-400">-</h2></div>
+                    <div class="kpi-card rounded-2xl p-5"><p class="text-[10px] font-black uppercase tracking-[0.22em] text-zinc-400">Duplicadas</p><h2 id="stat-duplicadas" class="mt-4 text-3xl font-black text-zinc-200">-</h2></div>
+                    <div class="kpi-card rounded-2xl p-5"><p class="text-[10px] font-black uppercase tracking-[0.22em] text-zinc-400">Pendentes na entrada</p><h2 id="stat-pendentes" class="mt-4 text-3xl font-black text-amber-300">-</h2></div>
+                    <div class="kpi-card rounded-2xl p-5"><p class="text-[10px] font-black uppercase tracking-[0.22em] text-zinc-400">Backend</p><h2 id="stat-backend" class="mt-4 text-lg font-black text-zinc-200">Aguardando sessão</h2><p id="stat-ultima" class="mt-2 text-xs text-zinc-400">Última execução: -</p></div>
                 </div>
 
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-bold text-gray-800">Configuração do Sistema</h3>
-                        <button onclick="abrirConfiguracao()" class="px-4 py-2 bg-zinc-700 text-white rounded-lg text-sm font-bold">Configurar</button>
+                <div class="theme-surface rounded-2xl border theme-border p-5 shadow-[0_16px_35px_rgba(15,23,42,0.08)]">
+                    <div class="mb-4 flex items-center justify-between gap-4">
+                        <div>
+                            <p class="text-[10px] font-black uppercase tracking-[0.22em] text-[var(--samf-text-muted)]">Sistema</p>
+                            <h3 class="mt-2 text-lg font-black text-[var(--samf-text)]">Configuração do Sistema</h3>
+                        </div>
+                        <button onclick="abrirConfiguracao()" class="rounded-xl border border-zinc-500/25 bg-zinc-700/80 px-4 py-2 text-sm font-bold text-white transition hover:border-zinc-300/60 hover:bg-zinc-600">Configurar</button>
                     </div>
-                    <div id="config-status" class="text-sm text-gray-600">Carregando status da configuração...</div>
+                    <div id="config-status" class="text-sm text-[var(--samf-text-muted)]">Carregando status da configuração...</div>
                 </div>
 
                 <section id="vencimentos-alertas" aria-labelledby="vencimentos-alertas-titulo" class="space-y-5">
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                         <div>
-                            <p class="text-xs font-black uppercase text-amber-600">Gestão financeira</p>
-                            <h3 id="vencimentos-alertas-titulo" class="text-xl font-bold text-gray-800">Alertas de vencimentos</h3>
-                            <p class="mt-1 text-sm text-gray-500">Acompanhe contas urgentes, próximas do vencimento e vencidas.</p>
+                            <p class="text-xs font-black uppercase tracking-[0.18em] text-amber-500">Gestão financeira</p>
+                            <h3 id="vencimentos-alertas-titulo" class="text-xl font-black text-[var(--samf-text)]">Alertas de vencimentos</h3>
+                            <p class="mt-1 text-sm text-[var(--samf-text-muted)]">Acompanhe contas urgentes, próximas do vencimento e vencidas.</p>
                         </div>
-                        <a href="/cobrancas/proximas-vencimento" aria-label="Ver todas as contas próximas do vencimento" class="inline-flex items-center justify-center gap-2 self-start rounded-lg px-3 py-2 text-sm font-bold text-zinc-200 hover:bg-zinc-800 sm:self-auto">
+                        <a href="/cobrancas/proximas-vencimento" aria-label="Ver todas as contas próximas do vencimento" class="inline-flex items-center justify-center gap-2 self-start rounded-xl border border-zinc-500/20 bg-zinc-800/60 px-3 py-2 text-sm font-bold text-zinc-200 transition hover:border-zinc-400/40 hover:bg-zinc-700/80 sm:self-auto">
                             <i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i>
                             <span>Ver todas</span>
                         </a>
-                        <span id="alertas-notificacoes-status" class="text-xs font-semibold text-gray-500" role="status" aria-live="polite">Notificações: verificando...</span>
+                        <span id="alertas-notificacoes-status" class="text-xs font-semibold text-[var(--samf-text-muted)]" role="status" aria-live="polite">Notificações: verificando...</span>
                     </div>
 
                     <div id="alertas-notificacoes-banner" class="hidden rounded-lg border p-4" role="status" aria-live="polite">
@@ -661,12 +771,12 @@
                             </div>
                             <p id="alertas-valor-pendente" class="mt-3 text-xl font-black text-zinc-100" aria-live="polite">-</p>
                         </article>
-                        <article class="min-h-28 rounded-lg border border-slate-200 bg-slate-50 p-4">
+                        <article class="min-h-28 rounded-lg border border-zinc-200 bg-zinc-50 p-4">
                             <div class="flex items-center justify-between gap-3">
-                                <p class="text-xs font-black uppercase text-slate-700">Contas vencidas</p>
-                                <i class="fas fa-clock text-slate-600" title="Contas cujo vencimento já passou" aria-label="Contas vencidas"></i>
+                                <p class="text-xs font-black uppercase text-zinc-700">Contas vencidas</p>
+                                <i class="fas fa-clock text-zinc-600" title="Contas cujo vencimento já passou" aria-label="Contas vencidas"></i>
                             </div>
-                            <p id="alertas-total-vencidas" class="mt-3 text-2xl font-black text-slate-800" aria-live="polite">-</p>
+                            <p id="alertas-total-vencidas" class="mt-3 text-2xl font-black text-zinc-800" aria-live="polite">-</p>
                         </article>
                     </div>
 
@@ -771,69 +881,89 @@
                     </template>
                 </section>
 
-                <section id="powerbi-resumo" class="relative overflow-hidden rounded-2xl border border-slate-700 bg-slate-950 p-5 shadow-[0_20px_45px_rgba(15,23,42,0.28)]">
-                    <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.22),transparent_35%),radial-gradient(circle_at_bottom_right,_rgba(168,85,247,0.18),transparent_30%)]"></div>
+                <section id="powerbi-resumo" class="relative overflow-hidden rounded-2xl border border-zinc-700 bg-zinc-950 p-5 shadow-[0_20px_45px_rgba(9,9,11,0.28)]">
+                    <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(161,161,170,0.22),transparent_35%),radial-gradient(circle_at_bottom_right,_rgba(113,113,122,0.18),transparent_30%)]"></div>
                     <div class="relative space-y-5">
                         <div class="flex items-center justify-between gap-3">
                             <div>
                                 <p class="text-[10px] font-black uppercase tracking-[0.28em] text-zinc-200">Executive</p>
                                 <h3 class="text-xl font-black text-white">Resumo financeiro</h3>
                             </div>
-                            <span id="powerbi-periodo" class="rounded-full border border-zinc-600 bg-slate-800/90 px-3 py-1 text-[11px] font-bold text-zinc-200">Competência: --</span>
+                            <span id="powerbi-periodo" class="rounded-full border border-zinc-600 bg-zinc-800/90 px-3 py-1 text-[11px] font-bold text-zinc-200">Competência: --</span>
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-                            <div class="rounded-2xl border border-zinc-700 bg-gradient-to-br from-zinc-800/70 to-slate-900 p-4">
+                            <div class="rounded-2xl border border-zinc-700 bg-gradient-to-br from-zinc-800/70 to-zinc-900 p-4">
                                 <p class="text-[10px] font-black uppercase tracking-[0.22em] text-zinc-200">Período</p>
                                 <p id="powerbi-mes-atual" class="mt-3 text-2xl font-black text-white">--</p>
                             </div>
-                            <div class="rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/18 to-slate-900 p-4">
+                            <div class="rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/18 to-zinc-900 p-4">
                                 <p class="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-200">Total</p>
                                 <p id="powerbi-total" class="mt-3 text-xl font-black text-emerald-300">--</p>
                             </div>
-                            <div class="rounded-2xl border border-violet-500/30 bg-gradient-to-br from-violet-500/18 to-slate-900 p-4">
+                            <div class="rounded-2xl border border-violet-500/30 bg-gradient-to-br from-violet-500/18 to-zinc-900 p-4">
                                 <p class="text-[10px] font-black uppercase tracking-[0.22em] text-violet-200">Serviços</p>
                                 <p id="powerbi-servicos-qtd" class="mt-3 text-xl font-black text-violet-300">--</p>
                             </div>
-                            <div class="rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/18 to-slate-900 p-4">
+                            <div class="rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/18 to-zinc-900 p-4">
                                 <p class="text-[10px] font-black uppercase tracking-[0.22em] text-amber-200">Órgãos</p>
                                 <p id="powerbi-orgaos-qtd" class="mt-3 text-xl font-black text-amber-300">--</p>
                             </div>
                         </div>
 
                         <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                            <div class="rounded-2xl border border-slate-700 bg-slate-900/70 p-4">
+                            <div class="rounded-2xl border border-zinc-700 bg-zinc-900/70 p-4">
                                 <div class="mb-3 flex items-center justify-between">
-                                    <h4 class="text-sm font-bold text-slate-100">Por serviço</h4>
-                                    <span class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Top 8</span>
+                                    <h4 class="text-sm font-bold text-zinc-100">Por serviço</h4>
+                                    <span class="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Top 8</span>
                                 </div>
                                 <div id="powerbi-servicos" class="space-y-2"></div>
                             </div>
 
-                            <div class="rounded-2xl border border-slate-700 bg-slate-900/70 p-4">
+                            <div class="rounded-2xl border border-zinc-700 bg-zinc-900/70 p-4">
                                 <div class="mb-3 flex items-center justify-between">
-                                    <h4 class="text-sm font-bold text-slate-100">Por órgão</h4>
-                                    <span class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Todos</span>
+                                    <h4 class="text-sm font-bold text-zinc-100">Por órgão</h4>
+                                    <span class="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Todos</span>
                                 </div>
                                 <div id="powerbi-orgaos" class="space-y-2"></div>
                             </div>
 
-                            <div class="rounded-2xl border border-slate-700 bg-slate-900/70 p-4 xl:col-span-2">
-                                <div class="mb-3 flex items-center justify-between">
-                                    <h4 class="text-sm font-bold text-slate-100">Por classificação</h4>
-                                    <span class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Resumo</span>
-                                </div>
-                                <div id="powerbi-classificacoes" class="grid grid-cols-1 md:grid-cols-3 gap-3"></div>
-                            </div>
                         </div>
                     </div>
                 </section>
 
                 <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                    <button onclick="showTab('faturas-todas')" class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-left hover:border-zinc-300 transition"><h3 class="text-lg font-bold text-gray-800 mb-4">Por mês</h3><div id="history-chart" class="h-48 flex items-end gap-2"></div></button>
-                    <button onclick="showTab('faturas-todas')" class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-left hover:border-zinc-300 transition"><h3 class="text-lg font-bold text-gray-800 mb-4">Por serviço</h3><div id="service-chart" class="space-y-3"></div></button>
-                    <button onclick="showTab('faturas-todas')" class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-left hover:border-zinc-300 transition"><h3 class="text-lg font-bold text-gray-800 mb-4">Por órgão</h3><div id="org-chart" class="space-y-3"></div></button>
-                    <button onclick="showTab('faturas-todas')" class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-left hover:border-zinc-300 transition"><h3 class="text-lg font-bold text-gray-800 mb-4">Por classificação</h3><div id="classification-chart" class="space-y-3"></div></button>
+                    <button onclick="showTab('faturas-todas')" class="dashboard-chart-card theme-surface block h-[290px] w-full rounded-2xl border theme-border p-4 text-left shadow-[0_16px_35px_rgba(15,23,42,0.08)] transition hover:border-zinc-400/60 xl:col-span-2">
+                        <div class="mb-3 flex items-center justify-between gap-3">
+                            <h3 class="text-lg font-black text-[var(--samf-text)]">Por mês</h3>
+                            <span class="rounded-full border border-zinc-400/25 bg-zinc-500/5 px-2 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-[var(--samf-text-muted)]">Vol.</span>
+                        </div>
+                        <div id="history-chart" class="h-[210px] w-full min-h-[180px]"></div>
+                    </button>
+
+                    <button onclick="showTab('faturas-todas')" class="dashboard-chart-card theme-surface block w-full rounded-2xl border theme-border p-5 text-left shadow-[0_16px_35px_rgba(15,23,42,0.08)] transition hover:border-zinc-400/60">
+                        <div class="mb-4 flex items-center justify-between gap-3">
+                            <h3 class="text-lg font-black text-[var(--samf-text)]">Por serviço</h3>
+                            <span class="rounded-full border border-blue-400/25 bg-blue-500/5 px-2 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-blue-400">Top</span>
+                        </div>
+                        <div id="service-chart" class="space-y-3"></div>
+                    </button>
+
+                    <button onclick="showTab('faturas-todas')" class="dashboard-chart-card theme-surface block w-full rounded-2xl border theme-border p-5 text-left shadow-[0_16px_35px_rgba(15,23,42,0.08)] transition hover:border-zinc-400/60">
+                        <div class="mb-4 flex items-center justify-between gap-3">
+                            <h3 class="text-lg font-black text-[var(--samf-text)]">Por órgão</h3>
+                            <span class="rounded-full border border-violet-400/25 bg-violet-500/5 px-2 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-violet-400">Org.</span>
+                        </div>
+                        <div id="org-chart" class="space-y-3"></div>
+                    </button>
+
+                    <button onclick="showTab('faturas-todas')" class="dashboard-chart-card theme-surface block w-full rounded-2xl border theme-border p-5 text-left shadow-[0_16px_35px_rgba(15,23,42,0.08)] transition hover:border-zinc-400/60">
+                        <div class="mb-4 flex items-center justify-between gap-3">
+                            <h3 class="text-lg font-black text-[var(--samf-text)]">Por classificação</h3>
+                            <span class="rounded-full border border-emerald-400/25 bg-emerald-500/5 px-2 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-400">Mix</span>
+                        </div>
+                        <div id="classification-chart" class="space-y-3"></div>
+                    </button>
                 </div>
             </div>
 
@@ -856,7 +986,7 @@
                     <label><span>Status</span><select id="filter-status" class="border rounded-lg px-3 py-2 text-sm"><option value="">Todos</option></select></label>
                     <button onclick="aplicarFiltrosFaturas()" class="self-end px-3 py-2.5 bg-zinc-700 text-zinc-50 rounded-lg text-sm font-bold hover:bg-zinc-600 transition" aria-label="Aplicar filtros"><i class="fas fa-filter mr-2" aria-hidden="true"></i>Filtrar</button>
                 </div>
-                <div id="faturas-grid" class="grid grid-cols-1 gap-4" aria-live="polite">
+                <div id="faturas-grid" class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3" aria-live="polite">
                     <!-- Cards will be loaded here -->
                 </div>
             </div>
@@ -957,7 +1087,8 @@
                         <select id="contas-direcao" class="border rounded-lg px-3 py-2 text-sm"><option value="asc">Crescente</option><option value="desc">Decrescente</option></select>
                         <button onclick="carregarContasCobranca(1)" class="px-3 py-2 bg-zinc-700 text-zinc-50 rounded-lg text-sm font-bold">Filtrar</button>
                     </div>
-                    <div class="bg-white rounded-xl border border-gray-100 overflow-x-auto"><table class="min-w-full"><thead class="bg-gray-50"><tr id="contas-head"></tr></thead><tbody id="contas-body"></tbody></table></div>
+                    <div id="contas-proximas-cards" class="hidden grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"></div>
+                    <div id="contas-tabela-wrapper" class="bg-white rounded-xl border border-gray-100 overflow-x-auto"><table class="min-w-full"><thead class="bg-gray-50"><tr id="contas-head"></tr></thead><tbody id="contas-body"></tbody></table></div>
                     <div class="flex items-center justify-between"><span id="contas-total" class="text-sm text-gray-500"></span><div class="flex gap-2"><button onclick="paginaContas(-1)" class="px-3 py-2 border rounded-lg text-sm">Anterior</button><span id="contas-pagina" class="px-3 py-2 text-sm text-gray-600"></span><button onclick="paginaContas(1)" class="px-3 py-2 border rounded-lg text-sm">Próxima</button></div></div>
                 </div>
             </div>
@@ -1067,24 +1198,27 @@
     <script>
         function aplicarTema(theme) {
             const temaAtual = theme === 'dark' ? 'dark' : 'light';
+            document.documentElement.classList.toggle('dark', temaAtual === 'dark');
             document.documentElement.dataset.theme = temaAtual;
+            localStorage.setItem('theme', temaAtual);
             localStorage.setItem('samf-theme', temaAtual);
             const toggle = document.getElementById('theme-toggle');
             const icon = document.getElementById('theme-toggle-icon');
             if (!toggle || !icon) return;
-            const modoNoturno = temaAtual !== 'dark';
-            icon.className = `fas ${modoNoturno ? 'fa-moon' : 'fa-sun'}`;
-            toggle.setAttribute('aria-label', modoNoturno ? 'Ativar modo noturno' : 'Ativar modo claro');
-            toggle.title = modoNoturno ? 'Ativar modo noturno' : 'Ativar modo claro';
+            const modoEscuroAtivo = temaAtual === 'dark';
+            icon.className = `fas ${modoEscuroAtivo ? 'fa-sun' : 'fa-moon'}`;
+            toggle.setAttribute('aria-label', modoEscuroAtivo ? 'Ativar modo claro' : 'Ativar modo noturno');
+            toggle.title = modoEscuroAtivo ? 'Ativar modo claro' : 'Ativar modo noturno';
         }
 
         function alternarTema() {
-            aplicarTema(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
+            aplicarTema(document.documentElement.classList.contains('dark') ? 'light' : 'dark');
         }
 
         function carregarTema() {
-            const saved = localStorage.getItem('samf-theme');
-            const tema = saved || 'dark';
+            const saved = localStorage.getItem('theme') || localStorage.getItem('samf-theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const tema = saved ? saved : (prefersDark ? 'dark' : 'light');
             aplicarTema(tema);
         }
 
@@ -1159,8 +1293,21 @@
 
         function closeSidebar() {
             document.getElementById('sidebar').classList.add('-translate-x-full');
+            document.getElementById('sidebar').classList.remove('sidebar-hover-open');
             document.getElementById('sidebar-backdrop').classList.add('hidden');
             document.getElementById('menu-toggle').setAttribute('aria-expanded', 'false');
+        }
+
+        function mostrarSidebarHover() {
+            if (window.innerWidth < 1024) return;
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.remove('-translate-x-full');
+            sidebar.classList.add('sidebar-hover-open');
+        }
+
+        function ocultarSidebarHover() {
+            if (window.innerWidth < 1024) return;
+            document.getElementById('sidebar').classList.remove('sidebar-hover-open');
         }
 
         const FATURA_VIEWS = {
@@ -1212,12 +1359,12 @@
                 document.getElementById('faturas-menu-toggle').classList.add('active');
                 toggleFaturasMenu(true);
                 document.getElementById('faturas-title').innerText = view.titulo;
-                if (atualizarUrl) window.history.pushState({}, '', view.path);
+                if (atualizarUrl) window.history.replaceState({}, '', view.path);
             }
             if (cobrancaView) {
                 document.getElementById('cobrancas-menu-toggle').classList.add('active');
                 toggleCobrancasMenu(true);
-                if (atualizarUrl) window.history.pushState({}, '', cobrancaView.path);
+                if (atualizarUrl) window.history.replaceState({}, '', cobrancaView.path);
                 document.getElementById('cobrancas-shell-title').innerText = cobrancaView.titulo;
                 document.getElementById('cobrancas-shell-description').innerText = cobrancaView.descricao;
             }
@@ -1251,8 +1398,7 @@
             };
             const resumirNome = valor => {
                 const texto = String(valor || '').trim();
-                if (!texto) return 'SEM NOME';
-                return texto.length > 18 ? `${texto.slice(0, 18)}...` : texto;
+                return texto || 'SEM NOME';
             };
             const siglaOrgao = valor => {
                 const texto = String(valor || '').trim();
@@ -1266,24 +1412,28 @@
             const orgaos = graficos.orgaos || [];
             const classificacoes = graficos.classificacoes || [];
             const meses = (graficos.meses || []).slice(0, 1);
+            const paletteServicos = ['#3B82F6', '#60A5FA', '#1D4ED8', '#93C5FD', '#2563EB'];
+            const paletteOrgaos = ['#1E293B', '#475569', '#0F172A', '#94A3B8', '#E2E8F0'];
+            const paletteClassificacoes = ['#10B981', '#3B82F6', '#F59E0B', '#8B5CF6', '#0EA5E9'];
 
             const renderHorizontalBars = (elementId, items, options = {}) => {
                 const el = document.getElementById(elementId);
                 if (!el) return;
                 if (!items.length) {
-                    el.innerHTML = '<div class="rounded-2xl border border-dashed border-slate-600 bg-slate-900/40 p-3 text-sm text-slate-400">Sem dados</div>';
+                    el.innerHTML = '<div class="rounded-2xl border border-dashed border-zinc-600 bg-zinc-900/40 p-3 text-sm text-zinc-400">Sem dados</div>';
                     return;
                 }
                 const maior = Math.max(...items.map(item => Number(item.valor || 0)), 1);
-                const { showValues = true, labelKey = 'nome', isOrg = false, palette = ['linear-gradient(90deg, #e4e4e7 0%, #52525b 100%)'] } = options;
+                const { showValues = true, labelKey = 'nome', isOrg = false, palette = ['linear-gradient(90deg, #e4e4e7 0%, #52525b 100%)'], filterField = null } = options;
                 el.innerHTML = items.map((item, index) => {
                     const nome = item[labelKey] || 'Sem nome';
                     const valor = Number(item.valor || 0);
                     const largura = Math.max((valor / maior) * 100, 8);
-                    const label = isOrg ? siglaOrgao(nome) : resumirNome(nome);
+                    const label = nome;
                     const barStyle = isOrg ? `background: ${index === 0 ? 'linear-gradient(90deg, #f5f5f4 0%, #71717a 100%)' : 'linear-gradient(90deg, rgba(212, 212, 216, 0.94) 0%, rgba(82, 82, 91, 0.85) 100%)'};` : `background: linear-gradient(90deg, #e4e4e7 0%, #52525b 100%);`;
+                    const clickAction = filterField ? `onclick="abrirFaturasComFiltro('${filterField}', '${String(nome).replace(/'/g, "\\'")}' )"` : '';
                     return `
-                        <div class="chart-row chart-shell group" tabindex="0">
+                        <div class="chart-row chart-shell group" tabindex="0" ${clickAction}>
                             <div class="chart-tooltip">${nome} · ${dinheiro(valor)}</div>
                             <div class="chart-label">${label}</div>
                             <div class="chart-track">
@@ -1295,24 +1445,29 @@
                 }).join('');
             };
 
-            const renderDonut = (elementId, items, palette) => {
+            const renderDonut = (elementId, items, palette, options = {}) => {
                 const el = document.getElementById(elementId);
                 if (!el) return;
                 if (!items.length) {
-                    el.innerHTML = '<div class="rounded-full border border-dashed border-slate-600 bg-slate-900/40 p-5 text-sm text-slate-400">Sem dados</div>';
+                    el.innerHTML = '<div class="rounded-full border border-dashed border-zinc-600 bg-zinc-900/40 p-5 text-sm text-zinc-400">Sem dados</div>';
                     return;
                 }
                 const total = items.reduce((soma, item) => soma + Number(item.valor || 0), 0) || 1;
+                let acumulado = 0;
                 const conic = items.map((item, index) => {
                     const valor = Number(item.valor || 0);
                     const pct = (valor / total) * 100;
-                    return `${palette[index % palette.length]} ${pct}%`;
+                    const inicio = acumulado;
+                    const fim = acumulado + pct;
+                    acumulado = fim;
+                    return `${palette[index % palette.length]} ${inicio}% ${fim}%`;
                 }).join(', ');
+                const filterField = options.filterField || null;
                 el.innerHTML = `
                     <div class="flex items-center justify-center gap-5 flex-wrap xl:flex-nowrap">
                         <div class="relative" style="width: 210px; height: 210px;">
                             <div class="absolute inset-0 rounded-full" style="background: conic-gradient(${conic}); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);"></div>
-                            <div class="absolute inset-[20px] rounded-full bg-slate-950/95 border border-slate-700/80"></div>
+                            <div class="absolute inset-[20px] rounded-full bg-zinc-950/95 border border-zinc-700/80"></div>
                             <div class="donut-total">
                                 <strong>${dinheiro(total)}</strong>
                                 <span>Total Geral</span>
@@ -1321,8 +1476,9 @@
                         <div class="donut-legend">
                             ${items.map((item, index) => {
                                 const nome = normalizarClassificacao(item.classificacao || item.nome || 'Sem nome');
+                                const clickAction = filterField ? `onclick="abrirFaturasComFiltro('${filterField}', '${String(nome).replace(/'/g, "\\'")}' )" style="cursor:pointer;"` : '';
                                 return `
-                                    <div class="legend-row">
+                                    <div class="legend-row" ${clickAction}>
                                         <span class="legend-dot" style="background:${palette[index % palette.length]};"></span>
                                         <span class="legend-label">${nome}</span>
                                         <span class="legend-value">${dinheiro(item.valor)}</span>
@@ -1348,9 +1504,9 @@
             if (elServicosQtd) elServicosQtd.textContent = String(servicos.length || 0);
             if (elOrgaosQtd) elOrgaosQtd.textContent = String((graficos.orgaos || []).length || 0);
 
-            renderHorizontalBars('powerbi-servicos', servicos, { labelKey: 'nome', showValues: true, isOrg: false });
-            renderHorizontalBars('powerbi-orgaos', orgaos, { labelKey: 'nome', showValues: false, isOrg: true });
-            renderDonut('powerbi-classificacoes', classificacoes, ['#e5e7eb', '#a1a1aa', '#d4d4d8', '#71717a']);
+            renderHorizontalBars('powerbi-servicos', servicos, { labelKey: 'nome', showValues: true, isOrg: false, palette: paletteServicos, filterField: 'servico' });
+            renderHorizontalBars('powerbi-orgaos', orgaos, { labelKey: 'nome', showValues: false, isOrg: true, palette: paletteOrgaos, filterField: 'orgao' });
+            renderDonut('powerbi-classificacoes', classificacoes, paletteClassificacoes, { filterField: 'classificacao' });
         }
 
         async function loadStats() {
@@ -1378,11 +1534,47 @@
                 exportOrgao.dataset.preenchido = 'true';
             }
             const meses = data.graficos?.meses || [];
-            const maxMes = Math.max(...meses.map(item => Number(item.valor || 0)), 1);
-            document.getElementById('history-chart').innerHTML = meses.map(item => `<div onclick="abrirFaturasComFiltro('competencia', '${String(item.mes).replace(/'/g, "\\'")}')" class="flex-1 flex flex-col items-center justify-end h-full cursor-pointer"><div class="w-full bg-zinc-300 rounded-t-lg" style="height:${Math.max(Number(item.valor || 0) / maxMes * 100, 3)}%" title="${dinheiro(item.valor)}"></div><span class="text-[10px] text-gray-400 mt-2 truncate max-w-full">${item.mes}</span></div>`).join('');
-            renderBars('service-chart', data.graficos?.servicos || [], 'nome', 'servico', dinheiro, 'text-zinc-200');
-            renderBars('org-chart', data.graficos?.orgaos || [], 'nome', 'orgao', dinheiro, 'text-zinc-300');
-            renderBars('classification-chart', data.graficos?.classificacoes || [], 'classificacao', 'classificacao', dinheiro, 'text-zinc-200');
+            const chartMes = document.getElementById('history-chart');
+            if (chartMes) {
+                if (!meses.length) {
+                    chartMes.innerHTML = '<div class="flex h-full items-center justify-center rounded-2xl border border-dashed border-zinc-500/40 bg-zinc-500/5 text-xs font-semibold text-[var(--samf-text-muted)]">Sem dados</div>';
+                } else {
+                    const maxMes = Math.max(...meses.map(item => Number(item.valor || 0)), 1);
+                    const ano = String(meses[meses.length - 1].mes || new Date().getFullYear()).slice(0, 4);
+                    const nomesMeses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+                    const mesesDoAno = nomesMeses.map((nome, indice) => {
+                        const chave = `${ano}-${String(indice + 1).padStart(2, '0')}`;
+                        const encontrado = meses.find(item => String(item.mes).replace('/', '-') === chave);
+                        return encontrado || { mes: chave, valor: 0, quantidade: 0 };
+                    });
+
+                    chartMes.innerHTML = `
+                        <div class="flex h-[180px] w-full items-end overflow-hidden rounded-2xl border border-zinc-400/15 bg-[linear-gradient(180deg,rgba(255,255,255,0.02),rgba(148,163,184,0.04))] p-2">
+                            <div class="flex h-full w-full items-end justify-between gap-1 sm:gap-2">
+                                ${mesesDoAno.map((item, index) => {
+                                    const valor = Number(item.valor || 0);
+                                    const altura = valor > 0 ? Math.max((valor / maxMes) * 100, 8) : 2;
+                                    const label = nomesMeses[index];
+                                    const quantidade = Number(item.quantidade || 0);
+                                    return `
+                                        <div onclick="event.stopPropagation(); abrirFaturasComFiltro('competencia', '${String(item.mes).replace(/'/g, "\\'")}')" class="group flex h-full min-w-0 flex-1 cursor-pointer flex-col items-center justify-end gap-1" title="${item.mes}: ${dinheiro(valor)} (${quantidade} faturas)">
+                                            <span class="flex h-5 max-w-full items-end justify-center truncate text-[7px] font-bold text-[var(--samf-text)] sm:text-[8px]">${dinheiro(valor)}</span>
+                                            <div class="flex min-h-0 w-full flex-1 items-end justify-center">
+                                                <div class="relative w-full rounded-t-lg border border-white/10 bg-gradient-to-t from-blue-700 to-sky-300 shadow-[0_6px_14px_rgba(59,130,246,0.18)] transition-all duration-200 group-hover:brightness-110" style="height:${altura}%; min-height:${valor > 0 ? '10px' : '2px'};"></div>
+                                            </div>
+                                            <span class="text-[9px] font-bold text-[var(--samf-text-muted)]">${label}</span>
+                                            <span class="text-[8px] text-[var(--samf-text-muted)]">${quantidade} fat.</span>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+            renderHorizontalBarsMain('service-chart', data.graficos?.servicos || [], { labelKey: 'nome', showValues: true, isOrg: false, filterField: 'servico', palette: ['#3B82F6', '#60A5FA', '#1D4ED8', '#93C5FD', '#2563EB'] });
+            renderHorizontalBarsMain('org-chart', data.graficos?.orgaos || [], { labelKey: 'nome', showValues: false, isOrg: true, filterField: 'orgao', palette: ['#1E293B', '#475569', '#0F172A', '#94A3B8', '#E2E8F0'] });
+            renderDonutMain('classification-chart', data.graficos?.classificacoes || [], ['#10B981', '#3B82F6', '#F59E0B', '#8B5CF6', '#0EA5E9'], { filterField: 'classificacao' });
             renderPowerBISection(data);
             loadUpcomingCards();
         }
@@ -1657,13 +1849,107 @@
 
         function renderBars(elementId, items, labelKey, filterKey, dinheiro, colorClass) {
             const maior = Math.max(...items.map(item => Number(item.valor || 0)), 1);
-            document.getElementById(elementId).innerHTML = items.map(item => `<div onclick="abrirFaturasComFiltro('${filterKey}', '${String(item[labelKey]).replace(/'/g, "\\'")}')" class="cursor-pointer chart-shell"><div class="flex justify-between text-xs font-semibold text-slate-300 gap-2"><span class="truncate">${item[labelKey]}</span><span>${dinheiro(item.valor)}</span></div><div class="h-2 bg-slate-800/70 rounded-full mt-1 overflow-hidden"><div class="h-2 rounded-full bg-gradient-to-r from-zinc-300 to-zinc-600 ${colorClass}" style="width:${Math.max(Number(item.valor || 0) / maior * 100, 2)}%"></div></div></div>`).join('') || '<p class="text-sm text-gray-400">Sem dados reais disponíveis.</p>';
+            document.getElementById(elementId).innerHTML = items.map(item => `<div onclick="event.stopPropagation(); abrirFaturasComFiltro('${filterKey}', '${String(item[labelKey]).replace(/'/g, "\\'")}')" class="cursor-pointer chart-shell"><div class="flex justify-between text-xs font-semibold text-zinc-300 gap-2"><span class="truncate">${item[labelKey]}</span><span>${dinheiro(item.valor)}</span></div><div class="h-2 bg-zinc-800/70 rounded-full mt-1 overflow-hidden"><div class="h-2 rounded-full bg-gradient-to-r from-zinc-300 to-zinc-600 ${colorClass}" style="width:${Math.max(Number(item.valor || 0) / maior * 100, 2)}%"></div></div></div>`).join('') || '<p class="text-sm text-gray-400">Sem dados reais disponíveis.</p>';
+        }
+
+        function renderHorizontalBarsMain(elementId, items, options = {}) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            if (!items?.length) {
+                el.innerHTML = '<div class="rounded-2xl border border-dashed border-zinc-600 bg-zinc-900/40 p-3 text-sm text-zinc-400">Sem dados</div>';
+                return;
+            }
+            const maior = Math.max(...items.map(item => Number(item.valor || 0)), 1);
+            const palette = options.palette || ['#3B82F6', '#60A5FA', '#1D4ED8', '#93C5FD', '#2563EB'];
+            const showValues = options.showValues !== false;
+            const labelKey = options.labelKey || 'nome';
+            const isOrg = Boolean(options.isOrg);
+            const filterField = options.filterField || null;
+            const resumirNome = valor => {
+                const texto = String(valor || '').trim();
+                return texto || 'SEM NOME';
+            };
+            const siglaOrgao = valor => {
+                const texto = String(valor || '').trim();
+                if (!texto) return 'N/A';
+                const partes = texto.split(/\s+/).filter(Boolean);
+                if (partes.length === 1) return partes[0].slice(0, 4).toUpperCase();
+                return partes.map(p => p[0]).join('').slice(0, 4).toUpperCase();
+            };
+            el.innerHTML = items.map((item, index) => {
+                const nome = item[labelKey] || 'Sem nome';
+                const valor = Number(item.valor || 0);
+                const largura = Math.max((valor / maior) * 100, 8);
+                const label = nome;
+                const start = palette[index % palette.length];
+                const end = index % 2 === 0 ? '#1D4ED8' : '#2563EB';
+                const barStyle = `background: linear-gradient(90deg, ${start} 0%, ${end} 100%); border-radius: 999px; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);`;
+                const clickAction = filterField ? `onclick="event.stopPropagation(); abrirFaturasComFiltro('${filterField}', '${String(nome).replace(/'/g, "\\'")}' )"` : '';
+                return `
+                    <div class="chart-row chart-shell group" tabindex="0" title="${nome}: ${valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}" ${clickAction}>
+                        <div class="chart-tooltip">${nome}<br>${valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+                        <div class="chart-label">${label}</div>
+                        <div class="chart-track">
+                            <div class="chart-bar" style="width:${largura}%; ${barStyle}"></div>
+                        </div>
+                        <div class="chart-value" ${showValues ? '' : 'style="display:none;"'}>${showValues ? valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : ''}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderDonutMain(elementId, items, palette = ['#10B981', '#3B82F6', '#F59E0B', '#8B5CF6', '#0EA5E9']) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            if (!items?.length) {
+                el.innerHTML = '<div class="rounded-full border border-dashed border-zinc-600 bg-zinc-900/40 p-5 text-sm text-zinc-400">Sem dados</div>';
+                return;
+            }
+            const total = items.reduce((soma, item) => soma + Number(item.valor || 0), 0) || 1;
+            let acumulado = 0;
+            const conic = items.map((item, index) => {
+                const valor = Number(item.valor || 0);
+                const pct = (valor / total) * 100;
+                const inicio = acumulado;
+                const fim = acumulado + pct;
+                acumulado = fim;
+                return `${palette[index % palette.length]} ${inicio}% ${fim}%`;
+            }).join(', ');
+            const normalizarClassificacao = valor => {
+                const texto = String(valor || '').trim();
+                if (!texto) return 'SEM CLASSIFICAÇÃO';
+                return texto.toUpperCase();
+            };
+            el.innerHTML = `
+                <div class="flex items-center justify-center gap-6 flex-wrap xl:flex-nowrap">
+                    <div class="relative" style="width: 210px; height: 210px;">
+                        <div class="absolute inset-0 rounded-full" style="background: conic-gradient(${conic}); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);"></div>
+                        <div class="absolute inset-[26px] rounded-full bg-[radial-gradient(circle_at_center,rgba(15,23,42,0.96),rgba(2,6,23,0.98))] border border-white/10 shadow-inner"></div>
+                        <div class="donut-total">
+                            <strong>${total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong>
+                            <span>Total Geral</span>
+                        </div>
+                    </div>
+                    <div class="donut-legend">
+                        ${items.map((item, index) => {
+                            const nome = normalizarClassificacao(item.classificacao || item.nome || 'Sem nome');
+                            return `
+                                <div class="legend-row">
+                                    <span class="legend-dot" style="background:${palette[index % palette.length]}; box-shadow: 0 0 0 3px rgba(255,255,255,0.04);"></span>
+                                    <span class="legend-label">${nome}</span>
+                                    <span class="legend-value">${Number(item.valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
         }
 
         function abrirFaturasComFiltro(campo, valor) {
             const filtros = {};
             filtros[campo] = valor;
-            window.history.pushState({}, '', '/faturas/todas');
+            window.history.replaceState({}, '', '/faturas/todas');
             showTab('faturas-todas', false);
             loadFaturas(filtros);
         }
@@ -1681,10 +1967,11 @@
         function aplicarFiltrosFaturas() {
             const filtros = {};
             ['competencia', 'fornecedor', 'servico', 'classificacao', 'orgao', 'status'].forEach(campo => {
-                const valor = document.getElementById(`filter-${campo}`).value;
+                const elemento = document.getElementById(`filter-${campo}`);
+                const valor = elemento ? elemento.value : '';
                 if (valor) filtros[campo] = valor;
             });
-            window.history.pushState({}, '', '/faturas/todas');
+            window.history.replaceState({}, '', '/faturas/todas');
             showTab('faturas-todas', false);
             loadFaturas(filtros);
         }
@@ -1695,6 +1982,12 @@
             const emRevisao = filtros.status === 'AGUARDANDO_REVISÃO';
             grid.innerHTML = '<div class="fatura-empty"><i class="fas fa-spinner fa-spin text-xl mb-3" aria-hidden="true"></i><p>Carregando faturas...</p></div>';
             try {
+                if (!document.getElementById('filter-servico').dataset.preenchido) {
+                    const statsRes = await fetch(`${API}/stats`);
+                    if (!statsRes.ok) throw new Error('Não foi possível carregar as opções de filtro.');
+                    const stats = await statsRes.json();
+                    preencherFiltros(stats.filtros || {});
+                }
                 const res = await fetch(`${API}/faturas${query ? '?' + query : ''}`);
                 if (!res.ok) throw new Error('Não foi possível carregar as faturas.');
                 const data = await res.json();
@@ -1855,6 +2148,48 @@
         function escapeConta(value) { return String(value ?? '-').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char])); }
         function formatarDataConta(value) { const texto = String(value || ''); const partes = texto.slice(0, 10).split('-'); return partes.length === 3 && partes[0].length === 4 ? `${partes[2]}/${partes[1]}/${partes[0]}` : (value || '-'); }
         function diasConta(conta, vencida) { if (!conta.data_vencimento) return '-'; const hoje = new Date(); const vencimento = new Date(`${conta.data_vencimento}T00:00:00`); return Math.abs(Math.round((vencimento - hoje) / 86400000)); }
+        function renderizarCardsProximas(contas) {
+            const cards = document.getElementById('contas-proximas-cards');
+            const tabela = document.getElementById('contas-tabela-wrapper');
+            const mostrarCards = ['cobrancas-visao', 'cobrancas-pendentes', 'cobrancas-proximas', 'cobrancas-vencidas'].includes(tabContasAtual);
+            cards.classList.toggle('hidden', !mostrarCards);
+            tabela.classList.toggle('hidden', mostrarCards);
+            if (!mostrarCards) return;
+            const dinheiroConta = valor => valorNumericoAlerta(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            cards.innerHTML = contas.map(conta => {
+                const dias = conta.dias_para_vencimento ?? diasConta(conta, false);
+                const vencida = tabContasAtual === 'cobrancas-vencidas';
+                const prioridade = vencida ? 'Vencida' : tabContasAtual === 'cobrancas-pendentes' ? 'Pendente' : tabContasAtual === 'cobrancas-visao' ? String(conta.status || 'Em acompanhamento').replace(/_/g, ' ') : dias !== '-' && dias <= 1 ? 'Alta' : 'Média';
+                const prazo = vencida ? `${dias} ${Number(dias) === 1 ? 'dia' : 'dias'} em atraso` : textoDiasAlerta(Number.isFinite(Number(dias)) ? Number(dias) : null);
+                return `
+                    <article class="proxima-conta-card flex flex-col gap-4 p-5">
+                        <header class="flex items-start justify-between gap-3 border-b border-zinc-400/15 pb-4">
+                            <div class="min-w-0">
+                                <p class="proxima-conta-label proxima-conta-identificador">Conta ${escapeConta(conta.identificador || conta.numero_fatura || `#${conta.id}`)}</p>
+                                <h3 class="proxima-conta-value mt-1 truncate text-base font-black">${escapeConta(conta.servico)}</h3>
+                            </div>
+                            <span class="shrink-0 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-[10px] font-black uppercase text-amber-500">${prioridade}</span>
+                        </header>
+                        <div class="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+                            <div><p class="proxima-conta-label">Órgão</p><p class="proxima-conta-value mt-1 font-semibold">${escapeConta(conta.orgao)}</p></div>
+                            <div><p class="proxima-conta-label">Unidade</p><p class="proxima-conta-value mt-1 font-semibold">${escapeConta(conta.unidade)}</p></div>
+                            <div><p class="proxima-conta-label">Fornecedor</p><p class="proxima-conta-value mt-1 font-semibold">${escapeConta(conta.fornecedor)}</p></div>
+                            <div><p class="proxima-conta-label">Competência</p><p class="proxima-conta-value mt-1 font-semibold">${escapeConta(conta.competencia)}</p></div>
+                            <div><p class="proxima-conta-label">Vencimento</p><p class="proxima-conta-value mt-1 font-semibold">${formatarDataConta(conta.data_vencimento)}</p></div>
+                            <div><p class="proxima-conta-label">Prazo</p><p class="proxima-conta-value mt-1 font-semibold">${escapeConta(prazo)}</p></div>
+                        </div>
+                        <dl class="grid grid-cols-3 gap-2 border-y border-zinc-400/15 py-4 text-center">
+                            <div><dt class="proxima-conta-label">Original</dt><dd class="proxima-conta-value mt-1 text-xs font-bold">${dinheiroConta(conta.valor_original)}</dd></div>
+                            <div><dt class="proxima-conta-label">Pago</dt><dd class="proxima-conta-value mt-1 text-xs font-bold">${dinheiroConta(conta.valor_pago)}</dd></div>
+                            <div><dt class="proxima-conta-label">Pendente</dt><dd class="proxima-conta-pendente mt-1 text-xs font-black">${dinheiroConta(conta.valor_pendente)}</dd></div>
+                        </dl>
+                        <footer class="mt-auto flex items-center justify-between gap-3">
+                            <span class="rounded-full border border-zinc-400/20 px-2.5 py-1 text-[10px] font-bold uppercase text-[var(--samf-text-muted)]">${escapeConta(conta.status)}</span>
+                            <button type="button" onclick="abrirDetalheConta(${Number(conta.id)})" class="inline-flex items-center gap-2 rounded-lg bg-zinc-700 px-3 py-2 text-xs font-bold text-white transition hover:bg-zinc-600"><i class="fas fa-arrow-right" aria-hidden="true"></i>Detalhes</button>
+                        </footer>
+                    </article>`;
+            }).join('');
+        }
         async function carregarContasCobranca(pagina = 1, tabId = tabContasAtual) {
             paginaContasAtual = pagina; tabContasAtual = tabId;
             const loading = document.getElementById('cobrancas-state-loading'); const empty = document.getElementById('cobrancas-state-empty'); const error = document.getElementById('cobrancas-state-error'); const content = document.getElementById('cobrancas-contas-content');
@@ -1863,7 +2198,7 @@
             const status = statusDaAba(tabId);
             if (status) queryParams.status = status;
             const query = new URLSearchParams(queryParams);
-            try { const resposta = await fetch(`${API}/cobrancas/contas?${query}`); const dados = await resposta.json(); if (!resposta.ok) throw new Error(dados.erro || 'Resposta inválida.'); const headers = cabecalhosContas(tabId); document.getElementById('contas-head').innerHTML = headers.map(h => `<th class="p-3 text-left text-xs font-black text-gray-500 uppercase whitespace-nowrap">${h}</th>`).join('') + '<th class="p-3"></th>'; document.getElementById('contas-body').innerHTML = (dados.contas || []).map(conta => { const extras = tabId === 'cobrancas-proximas' ? `<td class="p-3">${diasConta(conta, false)}</td><td class="p-3">${diasConta(conta, false) <= 1 ? 'Alta' : 'Média'}</td>` : tabId === 'cobrancas-vencidas' ? `<td class="p-3">${diasConta(conta, true)}</td>` : ''; return `<tr class="border-t hover:bg-gray-50"><td class="p-3">${escapeConta(conta.orgao)}</td><td class="p-3">${escapeConta(conta.unidade)}</td><td class="p-3">${escapeConta(conta.servico)}</td><td class="p-3">${escapeConta(conta.fornecedor)}</td><td class="p-3">${escapeConta(conta.competencia)}</td><td class="p-3">${formatarDataConta(conta.data_vencimento)}</td><td class="p-3">${escapeConta(conta.valor_pendente)}</td><td class="p-3">${escapeConta(conta.status)}</td>${extras}<td class="p-3"><button class="text-zinc-200 font-semibold" onclick="abrirDetalheConta(${conta.id})">Detalhes</button></td></tr>`; }).join(''); loading.classList.add('hidden'); if (!dados.contas?.length) { empty.classList.remove('hidden'); return; } content.classList.remove('hidden'); document.getElementById('contas-total').innerText = `${dados.total} conta(s)`; document.getElementById('contas-pagina').innerText = `${dados.pagina} / ${Math.max(1, dados.paginas)}`; } catch (err) { loading.classList.add('hidden'); document.getElementById('cobrancas-error-message').innerText = err.message; error.classList.remove('hidden'); }
+            try { const resposta = await fetch(`${API}/cobrancas/contas?${query}`); const dados = await resposta.json(); if (!resposta.ok) throw new Error(dados.erro || 'Resposta inválida.'); renderizarCardsProximas(dados.contas || []); const headers = cabecalhosContas(tabId); document.getElementById('contas-head').innerHTML = headers.map(h => `<th class="p-3 text-left text-xs font-black text-gray-500 uppercase whitespace-nowrap">${h}</th>`).join('') + '<th class="p-3"></th>'; document.getElementById('contas-body').innerHTML = (dados.contas || []).map(conta => { const extras = tabId === 'cobrancas-proximas' ? `<td class="p-3">${diasConta(conta, false)}</td><td class="p-3">${diasConta(conta, false) <= 1 ? 'Alta' : 'Média'}</td>` : tabId === 'cobrancas-vencidas' ? `<td class="p-3">${diasConta(conta, true)}</td>` : ''; return `<tr class="border-t hover:bg-gray-50"><td class="p-3">${escapeConta(conta.orgao)}</td><td class="p-3">${escapeConta(conta.unidade)}</td><td class="p-3">${escapeConta(conta.servico)}</td><td class="p-3">${escapeConta(conta.fornecedor)}</td><td class="p-3">${escapeConta(conta.competencia)}</td><td class="p-3">${formatarDataConta(conta.data_vencimento)}</td><td class="p-3">${escapeConta(conta.valor_pendente)}</td><td class="p-3">${escapeConta(conta.status)}</td>${extras}<td class="p-3"><button class="text-zinc-200 font-semibold" onclick="abrirDetalheConta(${conta.id})">Detalhes</button></td></tr>`; }).join(''); loading.classList.add('hidden'); if (!dados.contas?.length) { empty.classList.remove('hidden'); return; } content.classList.remove('hidden'); document.getElementById('contas-total').innerText = `${dados.total} conta(s)`; document.getElementById('contas-pagina').innerText = `${dados.pagina} / ${Math.max(1, dados.paginas)}`; } catch (err) { loading.classList.add('hidden'); document.getElementById('cobrancas-error-message').innerText = err.message; error.classList.remove('hidden'); }
         }
         async function abrirDetalheConta(id) { const resposta = await fetch(`${API}/cobrancas/contas/${id}`); const conta = await resposta.json(); if (!resposta.ok) return alert(conta.erro || 'Conta não encontrada.'); document.querySelector('#modal h3').innerText = 'Detalhe da conta'; document.getElementById('modal-content').innerHTML = Object.entries(conta).map(([chave, valor]) => `<div class="flex justify-between gap-4 border-b py-2"><span class="text-gray-500">${escapeConta(chave)}</span><strong class="text-right">${escapeConta(valor)}</strong></div>`).join(''); document.getElementById('modal').classList.remove('hidden'); }
         async function previsualizarRegraCobranca(id) { const resposta = await fetch(`${API}/regras-cobranca/${id}/preview`, { method: 'POST' }); const dados = await resposta.json(); if (!resposta.ok) return alert(dados.erro || 'Não foi possível gerar a prévia.'); document.getElementById('cob-preview').classList.remove('hidden'); document.getElementById('cob-preview-summary').innerText = `${dados.quantidade} conta(s) seriam afetadas. Nenhuma mensagem será enviada.`; document.getElementById('cob-preview-list').innerHTML = dados.contas.slice(0, 10).map(c => `<div>${c.orgao || '-'} | ${c.fornecedor || '-'} | ${c.valor_pendente ?? '-'} | ${c.status || '-'}</div>`).join('') || 'Nenhuma conta encontrada.'; document.getElementById('cob-status').innerText = 'Prévia gerada. Você pode ativar a regra mediante confirmação.'; }
